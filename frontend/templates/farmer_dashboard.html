@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}My stock · FarmLink{% endblock %}
+{% block content %}
+<h1>{{ farm.farm_name }}</h1>
+<p class="muted">
+  Status: <strong>{{ farm.verification_status }}</strong>
+  {% if farm.verification_status != 'approved' %}· You can publish stock after an admin approves your farm.{% endif %}
+  · <a href="{{ url_for('farm_profile') }}">Edit farm profile</a>
+</p>
+
+<h2>My stock</h2>
+{% for l in listings %}
+  <article class="card result">
+    <div>
+      <h3>{{ l.product_name }} <span class="tag">{{ l.status }}</span></h3>
+      <p class="muted">{{ '%g'|format(l.available_qty) }} {{ l.unit }} available
+        (total {{ '%g'|format(l.total_qty) }}, reserved {{ '%g'|format(l.reserved_qty) }}, sold {{ '%g'|format(l.sold_qty) }})
+        · Rs {{ '%g'|format(l.price_per_unit) }}/{{ l.unit }} · {{ l.city }}{% if l.origin_tag %} · {{ l.origin_tag }}{% endif %}</p>
+    </div>
+    <form class="inline" method="post" action="{{ url_for('farmer_update_stock', listing_id=l.id) }}">
+      <input type="number" step="any" name="total_qty" placeholder="New total qty">
+      <input type="number" step="any" name="price_per_unit" placeholder="New price">
+      <select name="status">
+        <option value="">Keep status</option>
+        <option value="active">Active</option>
+        <option value="paused">Paused</option>
+        <option value="sold_out">Sold out</option>
+      </select>
+      <button class="btn small" type="submit">Update</button>
+    </form>
+  </article>
+{% else %}
+  <p class="muted">No stock yet. Add your first product below.</p>
+{% endfor %}
+
+<h2>Add stock</h2>
+<form class="card" method="post" action="{{ url_for('farmer_add_stock') }}">
+  <div class="row">
+    <label>Product
+      <select name="product_id" required>
+        {% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Quantity <input type="number" step="any" min="0" name="total_qty" required></label>
+    <label>Unit
+      <select name="unit"><option>kg</option><option>litre</option><option>dozen</option><option>piece</option></select>
+    </label>
+    <label>Price per unit (Rs) <input type="number" step="any" min="0" name="price_per_unit" required></label>
+  </div>
+  <div class="row">
+    <label>Harvest / production date <input type="date" name="harvest_date"></label>
+    <label>Best before <input type="date" name="expiry_date"></label>
+    <label>Region of origin (optional) <input name="origin_tag" placeholder="Swat"></label>
+    <label class="check"><input type="checkbox" name="is_organic"> Organic (my own declaration)</label>
+  </div>
+  <h3>Where is this stock?</h3>
+  <label>Address <input name="address_text" required value="{{ farm.address_text }}"></label>
+  <div class="row">
+    <label>City <input name="city" required value="{{ farm.city }}"></label>
+    <label>District <input name="district" required value="{{ farm.district }}"></label>
+    <label>Province <input name="province" required value="{{ farm.province }}"></label>
+  </div>
+  <div class="row">
+    <label>Latitude <input name="latitude" id="latitude" required value="{{ farm.latitude }}"></label>
+    <label>Longitude <input name="longitude" id="longitude" required value="{{ farm.longitude }}"></label>
+    <button type="button" class="btn secondary" data-fill-location="latitude,longitude">Use my location</button>
+  </div>
+  <button class="btn" type="submit">Publish stock</button>
+</form>
+{% endblock %}

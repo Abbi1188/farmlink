@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign up · FarmLink{% endblock %}
+{% block content %}
+<form class="card narrow" method="post">
+  <h1>Create account</h1>
+  <label>Full name <input name="name" required minlength="2"></label>
+  <label>Phone number <input name="phone" required minlength="10" placeholder="03xx xxxxxxx"></label>
+  <label>Password <input type="password" name="password" required minlength="6"></label>
+  <label>I am a
+    <select name="role">
+      <option value="buyer">Buyer (I want to buy)</option>
+      <option value="farmer">Farmer (I want to sell)</option>
+    </select>
+  </label>
+  <label>Language
+    <select name="language">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+      <option value="ps">پښتو</option>
+    </select>
+  </label>
+  <button class="btn" type="submit">Sign up</button>
+  <p class="muted">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
+</form>
+{% endblock %}
