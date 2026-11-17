@@ -102,6 +102,7 @@ table.data { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 table.data th, table.data td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
 table.data th { background: #eef2eb; color: var(--muted); font-weight: 600; }
 table.data tr:last-child td { border-bottom: none; }
+<<<<<<< HEAD
 
 /* ---------- Status tags ---------- */
 .tag.warn { background: #fff4d6; color: #8a5a00; }
@@ -209,3 +210,5 @@ a.card.stat:hover { border-color: var(--green); }
 .timeline { padding-left: 20px; }
 .timeline li { margin-bottom: 6px; }
 .table-wrap form.inline input { width: 120px; }
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224

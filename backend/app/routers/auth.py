@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+<<<<<<< HEAD
 from app.config import settings
 from app.core.security import create_access_token, get_current_user, hash_password, verify_password
 from app.database import get_db
@@ -9,10 +10,17 @@ from app.models.user import User
 from app.schemas.auth import OtpRequestIn, OtpRequestOut, RegisterIn, TokenOut, UserOut
 from app.services import otp_service
 from app.services.otp_service import OtpError
+=======
+from app.core.security import create_access_token, get_current_user, hash_password, verify_password
+from app.database import get_db
+from app.models.user import User
+from app.schemas.auth import RegisterIn, TokenOut, UserOut
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+<<<<<<< HEAD
 @router.post("/otp/request", response_model=OtpRequestOut)
 def request_otp(data: OtpRequestIn, db: Session = Depends(get_db)):
     """Step 1 of registration: send a 6-digit code to the phone number."""
@@ -38,6 +46,12 @@ def register(data: RegisterIn, db: Session = Depends(get_db)):
         otp_service.verify_otp(db, data.phone, data.otp)
     except OtpError as exc:
         raise HTTPException(exc.status_code, str(exc))
+=======
+@router.post("/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
+def register(data: RegisterIn, db: Session = Depends(get_db)):
+    if db.query(User).filter(User.phone == data.phone).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "This phone number is already registered")
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     user = User(
         name=data.name,
         phone=data.phone,

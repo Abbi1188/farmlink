@@ -15,8 +15,12 @@ router = APIRouter(prefix="/farms", tags=["farms"])
 def create_profile(data: FarmIn, user: User = Depends(require_role(Role.FARMER)), db: Session = Depends(get_db)):
     if db.query(FarmProfile).filter(FarmProfile.owner_id == user.id).first():
         raise HTTPException(409, "You already have a farm profile")
+<<<<<<< HEAD
     # No admin approval for the farm itself: approval happens per stock listing.
     farm = FarmProfile(owner_id=user.id, verification_status=Verification.APPROVED, **data.model_dump())
+=======
+    farm = FarmProfile(owner_id=user.id, **data.model_dump())
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     db.add(farm)
     db.commit()
     db.refresh(farm)
@@ -30,6 +34,11 @@ def update_profile(data: FarmIn, user: User = Depends(require_role(Role.FARMER))
         raise HTTPException(404, "Create your farm profile first")
     for key, value in data.model_dump().items():
         setattr(farm, key, value)
+<<<<<<< HEAD
+=======
+    if farm.verification_status == Verification.REJECTED:
+        farm.verification_status = Verification.PENDING  # resubmit for review
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     db.commit()
     db.refresh(farm)
     return farm
@@ -46,6 +55,10 @@ def my_farm(user: User = Depends(require_role(Role.FARMER)), db: Session = Depen
 @router.get("/{farm_id}", response_model=FarmPublic)
 def public_farm(farm_id: int, db: Session = Depends(get_db)):
     farm = db.get(FarmProfile, farm_id)
+<<<<<<< HEAD
     if not farm:
+=======
+    if not farm or farm.verification_status != Verification.APPROVED:
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
         raise HTTPException(404, "Farm not found")
     return farm

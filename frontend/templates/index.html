@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+<<<<<<< HEAD
 {% if show_welcome %}{% include "_welcome_modal.html" %}{% endif %}
 
 <form class="search-hero" method="get" action="{{ url_for('index') }}">
@@ -46,11 +47,50 @@
       </p>
     </div>
   </details>
+=======
+<h1>Fresh from the farm, near you</h1>
+
+<form class="card search" method="get" action="{{ url_for('index') }}">
+  <div class="row">
+    <label>Product
+      <input name="q" value="{{ form.get('q', '') }}" placeholder="wheat, milk, desi ghee, honey">
+    </label>
+    <label>City
+      <input name="city" value="{{ form.get('city', '') }}" placeholder="Peshawar">
+    </label>
+    <label>District
+      <input name="district" value="{{ form.get('district', '') }}">
+    </label>
+    <label>From region (origin)
+      <input name="origin" value="{{ form.get('origin', '') }}" placeholder="Swat">
+    </label>
+  </div>
+  <div class="row">
+    <label>Within (km)
+      <select name="radius_km">
+        <option value="">Any distance</option>
+        {% for km in (5, 10, 25, 50) %}
+          <option value="{{ km }}" {{ 'selected' if form.get('radius_km') == km|string }}>{{ km }} km</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" name="organic" {{ 'checked' if form.get('organic') }}> Organic only</label>
+    <label class="check"><input type="checkbox" name="deliverable_only" {{ 'checked' if form.get('deliverable_only') }}> Delivers to me</label>
+    <input type="hidden" name="lat" id="lat" value="{{ form.get('lat', '') }}">
+    <input type="hidden" name="lon" id="lon" value="{{ form.get('lon', '') }}">
+    <button type="button" class="btn secondary" id="use-location">Use my location</button>
+    <button type="submit" class="btn">Search</button>
+  </div>
+  <p class="muted" id="location-status">
+    {% if form.get('lat') %}Location set.{% else %}Set your location to see distances and delivery options.{% endif %}
+  </p>
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 </form>
 
 {% if searched %}
   <h2>{{ results|length }} result{{ '' if results|length == 1 else 's' }}</h2>
   {% for r in results %}
+<<<<<<< HEAD
     {% with lat=form.get('lat'), lon=form.get('lon') %}{% include "_listing_card.html" %}{% endwith %}
   {% else %}
     <p class="muted">No stock matches. Try a different name or fewer filters.</p>
@@ -78,5 +118,31 @@
     {% for r in recent %}{% include "_listing_card.html" %}
     {% else %}<p class="muted">No new stock yet.</p>{% endfor %}
   </section>
+=======
+    <article class="card result">
+      <div>
+        <h3>{{ r.product_name }} {% if r.is_organic %}<span class="badge">Organic (self-declared)</span>{% endif %}</h3>
+        <p>{{ r.farm_name }} · {{ r.city }}, {{ r.district }}
+          {% if r.origin_tag %}· From {{ r.origin_tag }}{% endif %}</p>
+        <p class="muted">
+          {{ '%g'|format(r.available_qty) }} {{ r.unit }} available
+          {% if r.distance_km is not none %}· {{ r.distance_km }} km away{% endif %}
+          {% if r.harvest_date %}· harvested {{ r.harvest_date }}{% endif %}
+        </p>
+        <p>
+          {% if r.delivery_available %}<span class="tag ok">Delivery</span>{% endif %}
+          {% if r.pickup_available %}<span class="tag ok">Pickup</span>{% endif %}
+          <span class="tag">{{ r.fulfilment_label }}</span>
+        </p>
+      </div>
+      <div class="price">
+        <strong>Rs {{ '%g'|format(r.price_per_unit) }}</strong> / {{ r.unit }}
+        <a class="btn" href="{{ url_for('order_new', listing_id=r.id, lat=form.get('lat'), lon=form.get('lon')) }}">Order</a>
+      </div>
+    </article>
+  {% else %}
+    <p class="muted">No stock matches. Try a wider distance or fewer filters.</p>
+  {% endfor %}
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 {% endif %}
 {% endblock %}

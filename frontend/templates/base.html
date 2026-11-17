@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}FarmLink{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<<<<<<< HEAD
   {% block head_extra %}{% endblock %}
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 </head>
 <body>
   <header class="topbar">
@@ -13,10 +16,14 @@
     <nav>
       {% if current_user %}
         {% if current_user.role == 'admin' %}
+<<<<<<< HEAD
           <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
           <a href="{{ url_for('admin_farmers') }}">Farmers</a>
           <a href="{{ url_for('admin_buyers') }}">Buyers</a>
           <a href="{{ url_for('admin_orders') }}">Order tracking</a>
+=======
+          <a href="{{ url_for('admin_dashboard') }}">Admin dashboard</a>
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
         {% elif current_user.role == 'farmer' %}
           <a href="{{ url_for('farmer_dashboard') }}">My stock</a>
           <a href="{{ url_for('farmer_orders') }}">Orders</a>
@@ -24,10 +31,18 @@
           <a href="{{ url_for('index') }}">Find stock</a>
           <a href="{{ url_for('orders') }}">My orders</a>
         {% endif %}
+<<<<<<< HEAD
         <span class="muted">{{ current_user.name }} ({{ ROLE_LABELS.get(current_user.role, current_user.role) }})</span>
         <a href="{{ url_for('logout') }}">Log out</a>
       {% else %}
         <a class="btn small" href="{{ url_for('welcome') }}">Log in / Sign up</a>
+=======
+        <span class="muted">{{ current_user.name }}</span>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a class="btn small" href="{{ url_for('register') }}">Sign up</a>
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
       {% endif %}
     </nav>
   </header>
@@ -41,7 +56,10 @@
     {% block content %}{% endblock %}
   </main>
 
+<<<<<<< HEAD
   {% block scripts_extra %}{% endblock %}
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

@@ -37,6 +37,7 @@ def search(
     )
 
 
+<<<<<<< HEAD
 @router.get("/listings/popular", response_model=list[ListingPublic])
 def popular(
     lat: float | None = Query(None, ge=-90, le=90),
@@ -59,6 +60,8 @@ def recent(
     return search_service.recent_listings(db, lat=lat, lon=lon, limit=limit)
 
 
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 @router.get("/listings/{listing_id}", response_model=ListingPublic)
 def listing_detail(
     listing_id: int,

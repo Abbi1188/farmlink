@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
+<<<<<<< HEAD
 class OtpRequestIn(BaseModel):
     phone: str = Field(min_length=10, max_length=20)
 
@@ -17,6 +18,11 @@ class RegisterIn(BaseModel):
     name: str = Field(min_length=2, max_length=100)
     phone: str = Field(min_length=10, max_length=20)
     otp: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+=======
+class RegisterIn(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    phone: str = Field(min_length=10, max_length=20)
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     password: str = Field(min_length=6, max_length=72)
     role: Literal["farmer", "buyer"]
     language: Literal["en", "ur", "ps"] = "en"

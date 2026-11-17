@@ -19,7 +19,7 @@ CREATE TABLE farm_profiles (
     owner_id            INTEGER NOT NULL UNIQUE REFERENCES users(id),
     farm_name           VARCHAR(150) NOT NULL,
     description         TEXT,
-    verification_status VARCHAR(20) NOT NULL DEFAULT 'approved', -- farms are approved automatically; stock is reviewed instead
+    verification_status VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending | approved | rejected
     delivery_enabled    BOOLEAN NOT NULL DEFAULT FALSE,
     pickup_enabled      BOOLEAN NOT NULL DEFAULT TRUE,
     delivery_radius_km  DOUBLE PRECISION NOT NULL DEFAULT 10,
@@ -67,8 +67,11 @@ CREATE TABLE stock_listings (
     longitude      DOUBLE PRECISION NOT NULL,
     origin_tag     VARCHAR(80),                              -- regional origin, e.g. Swat
     status         VARCHAR(20) NOT NULL DEFAULT 'active',    -- active | paused | sold_out
+<<<<<<< HEAD
     approval_status VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending | approved | rejected (admin reviews every new stock)
     approval_note  VARCHAR(255),                             -- reason when rejected
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMP NOT NULL DEFAULT NOW(),
     CHECK (reserved_qty + sold_qty <= total_qty)
@@ -79,7 +82,10 @@ CREATE INDEX ix_listings_city     ON stock_listings (city);
 CREATE INDEX ix_listings_district ON stock_listings (district);
 CREATE INDEX ix_listings_origin   ON stock_listings (origin_tag);
 CREATE INDEX ix_listings_status   ON stock_listings (status);
+<<<<<<< HEAD
 CREATE INDEX ix_listings_approval ON stock_listings (approval_status);
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 CREATE INDEX ix_listings_geo      ON stock_listings (latitude, longitude);
 -- For large data, add PostGIS and a GiST index on a geography column instead of the (latitude, longitude) index.
 

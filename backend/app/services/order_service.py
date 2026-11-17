@@ -5,12 +5,20 @@ from datetime import timedelta
 from sqlalchemy.orm import Session
 
 from app.config import settings
+<<<<<<< HEAD
 from app.core.constants import Approval, Fulfilment, ListingStatus, OrderStatus, Verification
+=======
+from app.core.constants import Fulfilment, ListingStatus, OrderStatus, Verification
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 from app.core.geo import haversine_km
 from app.database import utcnow
 from app.models.catalog import StockListing
 from app.models.farm import FarmProfile
+<<<<<<< HEAD
 from app.models.order import Order, OrderEvent, OrderItem
+=======
+from app.models.order import Order, OrderItem
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 from app.models.user import User
 from app.schemas.order import OrderCreate
 from app.services import stock_service
@@ -48,9 +56,12 @@ def place_order(db: Session, buyer: User, data: OrderCreate) -> Order:
     if len(listings) != len(ids):
         raise OrderError("One of the items no longer exists")
 
+<<<<<<< HEAD
     if any(l.approval_status != Approval.APPROVED for l in listings.values()):
         raise OrderError("One of the items is not available yet")
 
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     farm_ids = {l.farm_id for l in listings.values()}
     if len(farm_ids) != 1:
         raise OrderError("An order can contain items from one farm only")
@@ -109,7 +120,10 @@ def place_order(db: Session, buyer: User, data: OrderCreate) -> Order:
         db.rollback()
         raise OrderError(str(exc)) from exc
 
+<<<<<<< HEAD
     order.events.append(OrderEvent(status=OrderStatus.PLACED))
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     db.add(order)
     db.flush()
     notify(db, farm.owner_id, "order", f"New order #{order.id} received")
@@ -120,7 +134,10 @@ def place_order(db: Session, buyer: User, data: OrderCreate) -> Order:
 
 def _apply_status(db: Session, order: Order, new_status: str) -> None:
     order.status = new_status
+<<<<<<< HEAD
     order.events.append(OrderEvent(status=new_status))
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     for item in order.items:
         listing = db.get(StockListing, item.listing_id)
         if new_status in STOCK_RELEASING:

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -21,17 +22,53 @@ from app.schemas.admin import (
 )
 from app.schemas.farm import FarmOut
 from app.schemas.order import OrderItemOut
+=======
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.core.constants import Role, Verification
+from app.core.security import require_role
+from app.database import get_db
+from app.models.farm import FarmProfile
+from app.models.user import User
+from app.schemas.farm import FarmOut
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 from app.services.notification_service import notify
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_role(Role.ADMIN))])
 
 
+<<<<<<< HEAD
 # ---------- helpers ----------
+=======
+class AdminUserOut(BaseModel):
+    id: int
+    name: str
+    phone: str
+    role: str
+    is_active: bool
+    created_at: datetime
+    farm_id: int | None = None
+    farm_name: str | None = None
+    farm_status: str | None = None
+
+
+class AdminFarmOut(FarmOut):
+    owner_id: int
+    owner_name: str
+    owner_phone: str
+
+
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 def _farm_out(farm: FarmProfile) -> AdminFarmOut:
     data = FarmOut.model_validate(farm).model_dump()
     return AdminFarmOut(**data, owner_id=farm.owner_id, owner_name=farm.owner.name, owner_phone=farm.owner.phone)
 
 
+<<<<<<< HEAD
 def _stock_out(listing: StockListing) -> AdminStockOut:
     farm = listing.farm
     return AdminStockOut(
@@ -150,11 +187,14 @@ def _order_out(order: Order) -> AdminOrderOut:
 
 
 # ---------- dashboard ----------
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 @router.get("/stats")
 def stats(db: Session = Depends(get_db)):
     return {
         "farmers": db.query(User).filter(User.role == Role.FARMER).count(),
         "buyers": db.query(User).filter(User.role == Role.BUYER).count(),
+<<<<<<< HEAD
         "pending_stock": db.query(StockListing).filter(StockListing.approval_status == Approval.PENDING).count(),
         "orders": db.query(Order).count(),
         "active_orders": db.query(Order)
@@ -164,6 +204,12 @@ def stats(db: Session = Depends(get_db)):
 
 
 # ---------- users: buyers and farmers ----------
+=======
+        "pending_farms": db.query(FarmProfile).filter(FarmProfile.verification_status == Verification.PENDING).count(),
+    }
+
+
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 @router.get("/users", response_model=list[AdminUserOut])
 def list_users(role: str | None = None, db: Session = Depends(get_db)):
     """All users (optionally one role), with the farm details for farmers."""
@@ -171,6 +217,7 @@ def list_users(role: str | None = None, db: Session = Depends(get_db)):
     if role:
         query = query.filter(User.role == role)
     farms = {f.owner_id: f for f in db.query(FarmProfile).all()}
+<<<<<<< HEAD
     return [AdminUserOut(**_user_out(u, farms.get(u.id))) for u in query.order_by(User.created_at.desc()).all()]
 
 
@@ -192,14 +239,61 @@ def list_farmers(db: Session = Depends(get_db)):
                 stock_total=len(stocks),
                 stock_pending=sum(1 for s in stocks if s.approval_status == Approval.PENDING),
                 stocks=stocks,
+=======
+    result = []
+    for user in query.order_by(User.created_at.desc()).all():
+        farm = farms.get(user.id)
+        result.append(
+            AdminUserOut(
+                id=user.id, name=user.name, phone=user.phone, role=user.role,
+                is_active=user.is_active, created_at=user.created_at,
+                farm_id=farm.id if farm else None,
+                farm_name=farm.farm_name if farm else None,
+                farm_status=farm.verification_status if farm else None,
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
             )
         )
     return result
 
 
 @router.get("/farms", response_model=list[AdminFarmOut])
+<<<<<<< HEAD
 def list_farms(db: Session = Depends(get_db)):
     return [_farm_out(f) for f in db.query(FarmProfile).order_by(FarmProfile.id.desc()).all()]
+=======
+def list_farms(status: str | None = None, db: Session = Depends(get_db)):
+    query = db.query(FarmProfile)
+    if status:
+        query = query.filter(FarmProfile.verification_status == status)
+    return [_farm_out(f) for f in query.order_by(FarmProfile.id.desc()).all()]
+
+
+@router.get("/farms/pending", response_model=list[AdminFarmOut])
+def pending_farms(db: Session = Depends(get_db)):
+    farms = db.query(FarmProfile).filter(FarmProfile.verification_status == Verification.PENDING).all()
+    return [_farm_out(f) for f in farms]
+
+
+def _set_status(db: Session, farm_id: int, status: str, message: str) -> FarmProfile:
+    farm = db.get(FarmProfile, farm_id)
+    if not farm:
+        raise HTTPException(404, "Farm not found")
+    farm.verification_status = status
+    notify(db, farm.owner_id, "account", message)
+    db.commit()
+    db.refresh(farm)
+    return farm
+
+
+@router.post("/farms/{farm_id}/approve", response_model=FarmOut)
+def approve_farm(farm_id: int, db: Session = Depends(get_db)):
+    return _set_status(db, farm_id, Verification.APPROVED, "Your farm is approved. You can now add stock.")
+
+
+@router.post("/farms/{farm_id}/reject", response_model=FarmOut)
+def reject_farm(farm_id: int, db: Session = Depends(get_db)):
+    return _set_status(db, farm_id, Verification.REJECTED, "Your farm was not approved. Please update your details.")
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 @router.post("/users/{user_id}/suspend")
@@ -222,6 +316,7 @@ def activate_user(user_id: int, db: Session = Depends(get_db)):
     user.is_active = True
     db.commit()
     return {"id": user.id, "is_active": user.is_active}
+<<<<<<< HEAD
 
 
 # ---------- stock approval ----------
@@ -282,3 +377,5 @@ def order_detail(order_id: int, db: Session = Depends(get_db)):
     if not order:
         raise HTTPException(404, "Order not found")
     return _order_out(order)
+=======
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224

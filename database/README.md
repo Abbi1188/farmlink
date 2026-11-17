@@ -2,7 +2,7 @@
 
 | File | Purpose |
 | --- | --- |
-| `init_db.py` | Creates all tables, the starting catalogue (grains, dairy, vegetables, fruits, eggs, honey) and the built-in admin account. Safe to run repeatedly. |
+| `init_db.py` | Creates all tables, the starting catalogue (grains, dairy, vegetables, fruits, eggs, honey,oats,shilajit) and the built-in admin account. Safe to run repeatedly. |
 | `seed_demo.py` | Adds a demo farmer, a demo buyer and three approved listings. Development only. |
 | `migrate_v2.py` | Upgrades an existing database (adds stock approval columns, OTP and order-history tables, creates the admin). Run once after updating the code. |
 | `schema.sql` | Reference PostgreSQL schema that mirrors `backend/app/models`. |

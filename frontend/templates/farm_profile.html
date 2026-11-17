@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<<<<<<< HEAD
 {% from "_location_picker.html" import location_picker %}
 {% block title %}Farm profile · FarmLink{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
@@ -6,15 +7,35 @@
 {% block content %}
 <h1>{{ 'Edit farm profile' if farm else 'Set up your farm' }}</h1>
 <p class="muted">Your farm needs no approval. Each new stock you add is reviewed by the admin.</p>
+=======
+{% block title %}Farm profile · FarmLink{% endblock %}
+{% block content %}
+<h1>{{ 'Edit farm profile' if farm else 'Set up your farm' }}</h1>
+{% if farm %}<p class="muted">Status: <strong>{{ farm.verification_status }}</strong></p>{% endif %}
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 <form class="card" method="post">
   <label>Farm name <input name="farm_name" required value="{{ farm.farm_name if farm else '' }}"></label>
   <label>About your farm <textarea name="description" rows="3">{{ farm.description if farm and farm.description else '' }}</textarea></label>
 
   <h3>Farm location</h3>
+<<<<<<< HEAD
   {{ location_picker(address=farm.address_text if farm else '', lat=farm.latitude if farm else '', lon=farm.longitude if farm else '',
                      with_parts=true, city=farm.city if farm else '', district=farm.district if farm else '',
                      province=farm.province if farm else 'Khyber Pakhtunkhwa') }}
+=======
+  <label>Address <input name="address_text" required value="{{ farm.address_text if farm else '' }}"></label>
+  <div class="row">
+    <label>City <input name="city" required value="{{ farm.city if farm else '' }}"></label>
+    <label>District <input name="district" required value="{{ farm.district if farm else '' }}"></label>
+    <label>Province <input name="province" required value="{{ farm.province if farm else 'Khyber Pakhtunkhwa' }}"></label>
+  </div>
+  <div class="row">
+    <label>Latitude <input name="latitude" id="latitude" required value="{{ farm.latitude if farm else '' }}"></label>
+    <label>Longitude <input name="longitude" id="longitude" required value="{{ farm.longitude if farm else '' }}"></label>
+    <button type="button" class="btn secondary" data-fill-location="latitude,longitude">Use my location</button>
+  </div>
+>>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
   <h3>Pickup and delivery</h3>
   <label class="check"><input type="checkbox" name="pickup_enabled" {{ 'checked' if not farm or farm.pickup_enabled }}> Buyers can pick up from the farm</label>
