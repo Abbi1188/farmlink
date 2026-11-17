@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_location_picker.html" import location_picker %}
+{% block title %}My stock · FarmLink{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block scripts_extra %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>{% endblock %}
+{% block content %}
+<h1>{{ farm.farm_name }}</h1>
+<p class="muted"><a href="{{ url_for('farm_profile') }}">Edit farm profile</a> · You can add as many stocks as you like.</p>
+
+<h2>My stock</h2>
+{% for l in listings %}
+  <article class="card result">
+    <div>
+      <h3>{{ l.product_name }}
+        <span class="tag {{ 'ok' if l.approval_status == 'approved' else ('warn' if l.approval_status == 'pending' else 'bad') }}">
+          {{ 'Waiting for admin approval' if l.approval_status == 'pending' else ('Approved' if l.approval_status == 'approved' else 'Not approved') }}
+        </span>
+        {% if l.approval_status == 'approved' %}<span class="tag">{{ l.status.replace('_', ' ') }}</span>{% endif %}
+      </h3>
+      {% if l.approval_status == 'rejected' %}
+        <p class="rejected-note">The admin did not approve this stock{% if l.approval_note %}: {{ l.approval_note }}{% endif %}.
+          Change something (quantity, price) and save to send it again.</p>
+      {% endif %}
+      <p class="muted">{{ '%g'|format(l.available_qty) }} {{ l.unit }} available
+        (total {{ '%g'|format(l.total_qty) }}, reserved {{ '%g'|format(l.reserved_qty) }}, sold {{ '%g'|format(l.sold_qty) }})
+        · Rs {{ '%g'|format(l.price_per_unit) }}/{{ l.unit }}{% if l.origin_tag %} · {{ l.origin_tag }}{% endif %}</p>
+      <p class="muted">Pickup point: {{ l.address_text }}, {{ l.city }} ·
+        <a href="{{ l.latitude|maps_url(l.longitude) }}" target="_blank" rel="noopener">View on map</a></p>
+    </div>
+    <form class="inline" method="post" action="{{ url_for('farmer_update_stock', listing_id=l.id) }}">
+      <input type="number" step="any" name="total_qty" placeholder="New total qty">
+      <input type="number" step="any" name="price_per_unit" placeholder="New price">
+      <select name="status">
+        <option value="">Keep status</option>
+        <option value="active">Active</option>
+        <option value="paused">Paused</option>
+        <option value="sold_out">Sold out</option>
+      </select>
+      <button class="btn small" type="submit">Update</button>
+    </form>
+  </article>
+{% else %}
+  <p class="muted">No stock yet. Add your first product below.</p>
+{% endfor %}
+
+<h2>Add new stock</h2>
+<p class="muted">Every new stock is checked by the admin first. Buyers can see it once it is approved.</p>
+<form class="card" method="post" action="{{ url_for('farmer_add_stock') }}">
+  <div class="row">
+    <label>Product
+      <select name="product_id" required>
+        {% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Quantity <input type="number" step="any" min="0" name="total_qty" required></label>
+    <label>Unit
+      <select name="unit"><option>kg</option><option>litre</option><option>dozen</option><option>piece</option></select>
+    </label>
+    <label>Price per unit (Rs) <input type="number" step="any" min="0" name="price_per_unit" required></label>
+  </div>
+  <div class="row">
+    <label>Harvest / production date <input type="date" name="harvest_date"></label>
+    <label>Best before <input type="date" name="expiry_date"></label>
+    <label>Region of origin (optional) <input name="origin_tag" placeholder="Swat"></label>
+    <label class="check"><input type="checkbox" name="is_organic"> Organic (my own declaration)</label>
+  </div>
+
+  <h3>Where is this stock? (buyers use this for pickup)</h3>
+  {{ location_picker(address=farm.address_text, lat=farm.latitude, lon=farm.longitude, with_parts=true,
+                     city=farm.city, district=farm.district, province=farm.province) }}
+  <button class="btn" type="submit">Send stock for approval</button>
+</form>
+{% endblock %}

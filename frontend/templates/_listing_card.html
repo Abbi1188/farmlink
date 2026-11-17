@@ -1,0 +1,24 @@
+{# One stock result. Expects `r` (a listing from the API) and optional `lat`/`lon` (the buyer's search location). #}
+<article class="card result">
+  <div>
+    <h3>{{ r.product_name }} {% if r.is_organic %}<span class="badge">Organic (self-declared)</span>{% endif %}</h3>
+    <p>{{ r.farm_name }} · {{ r.city }}, {{ r.district }}
+      {% if r.origin_tag %}· From {{ r.origin_tag }}{% endif %}</p>
+    <p class="muted">
+      {{ '%g'|format(r.available_qty) }} {{ r.unit }} available
+      {% if r.distance_km is not none %}· {{ r.distance_km }} km away{% endif %}
+      {% if r.harvest_date %}· harvested {{ r.harvest_date }}{% endif %}
+    </p>
+    <p class="muted">Pickup point: {{ r.address_text }}</p>
+    <p>
+      {% if r.delivery_available %}<span class="tag ok">Delivery</span>{% endif %}
+      {% if r.pickup_available %}<span class="tag ok">Pickup</span>{% endif %}
+      {% if r.distance_km is not none %}<span class="tag">{{ r.fulfilment_label }}</span>{% endif %}
+    </p>
+  </div>
+  <div class="price">
+    <span><strong>Rs {{ '%g'|format(r.price_per_unit) }}</strong> / {{ r.unit }}</span>
+    <a class="btn" href="{{ url_for('order_new', listing_id=r.id, lat=lat or None, lon=lon or None) }}">Order</a>
+    <a class="btn secondary" href="{{ r.latitude|maps_url(r.longitude) }}" target="_blank" rel="noopener">View on map</a>
+  </div>
+</article>

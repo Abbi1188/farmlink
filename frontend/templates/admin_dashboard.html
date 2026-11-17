@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_admin_macros.html" import review_buttons %}
+{% block title %}Admin · FarmLink{% endblock %}
+{% block content %}
+<h1>Admin dashboard</h1>
+
+<div class="row stats">
+  <a class="card stat" href="#pending"><strong>{{ stats.get('pending_stock', 0) }}</strong><span class="muted">Stock waiting for approval</span></a>
+  <a class="card stat" href="{{ url_for('admin_farmers') }}"><strong>{{ stats.get('farmers', 0) }}</strong><span class="muted">Farmers</span></a>
+  <a class="card stat" href="{{ url_for('admin_buyers') }}"><strong>{{ stats.get('buyers', 0) }}</strong><span class="muted">Buyers</span></a>
+  <a class="card stat" href="{{ url_for('admin_orders') }}"><strong>{{ stats.get('active_orders', 0) }}</strong><span class="muted">Active orders ({{ stats.get('orders', 0) }} in total)</span></a>
+</div>
+
+<p class="actions">
+  <a class="btn" href="{{ url_for('admin_orders') }}">Order tracking</a>
+  <a class="btn secondary" href="{{ url_for('admin_farmers') }}">Farmers and their stock</a>
+  <a class="btn secondary" href="{{ url_for('admin_buyers') }}">Buyers</a>
+</p>
+
+<h2 id="pending">Stock waiting for approval</h2>
+{% for s in pending %}
+  <article class="card">
+    <h3>{{ s.product_name }} <span class="tag warn">Pending approval</span>{% if s.is_organic %} <span class="badge">Organic (self-declared)</span>{% endif %}</h3>
+    <p>{{ '%g'|format(s.total_qty) }} {{ s.unit }} at Rs {{ '%g'|format(s.price_per_unit) }}/{{ s.unit }}
+      {% if s.harvest_date %}· harvested {{ s.harvest_date }}{% endif %}
+      {% if s.expiry_date %}· best before {{ s.expiry_date }}{% endif %}
+      {% if s.origin_tag %}· from {{ s.origin_tag }}{% endif %}</p>
+    <p class="muted">Farm: {{ s.farm_name }} · Farmer: {{ s.farmer_name }} · {{ s.farmer_phone }}</p>
+    <p class="muted">Stock location: {{ s.address_text }}, {{ s.city }}, {{ s.district }} ·
+      <a href="{{ s.latitude|maps_url(s.longitude) }}" target="_blank" rel="noopener">View on map</a></p>
+    {{ review_buttons(s, request.path) }}
+  </article>
+{% else %}
+  <p class="muted">No stock is waiting for approval.</p>
+{% endfor %}
+{% endblock %}

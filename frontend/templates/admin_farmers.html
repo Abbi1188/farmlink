@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_admin_macros.html" import account_action, review_buttons, approval_tag %}
+{% block title %}Farmers · FarmLink{% endblock %}
+{% block content %}
+<h1>Farmers</h1>
+<p class="muted">{{ farmers|length }} registered. Click a farmer to see all of their stock.</p>
+
+{% for f in farmers %}
+  <details class="farmer-item">
+    <summary>
+      <span class="farmer-name">{{ f.name }}</span>
+      <span class="muted">{{ f.phone }}</span>
+      <span class="muted">{{ f.farm_name or 'No farm profile yet' }}</span>
+      <span class="tag">{{ f.stock_total }} stock{{ '' if f.stock_total == 1 else 's' }}</span>
+      {% if f.stock_pending %}<span class="tag warn">{{ f.stock_pending }} pending</span>{% endif %}
+      {% if not f.is_active %}<span class="tag bad">Suspended</span>{% endif %}
+    </summary>
+
+    <div class="farmer-body">
+      <p class="muted">Joined {{ f.created_at|dt }} · Account: {{ 'Active' if f.is_active else 'Suspended' }}</p>
+      {{ account_action(f, request.path) }}
+
+      <h3>Stock</h3>
+      {% if f.stocks %}
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Location</th><th>Approval</th><th></th></tr></thead>
+            <tbody>
+            {% for s in f.stocks %}
+              <tr>
+                <td>{{ s.product_name }}{% if s.is_organic %} <span class="badge">Organic</span>{% endif %}
+                  {% if s.approval_status == 'approved' %}<br><span class="muted">{{ s.status.replace('_', ' ') }}</span>{% endif %}</td>
+                <td>{{ '%g'|format(s.available_qty) }} / {{ '%g'|format(s.total_qty) }} {{ s.unit }}</td>
+                <td>Rs {{ '%g'|format(s.price_per_unit) }}/{{ s.unit }}</td>
+                <td>{{ s.address_text }}, {{ s.city }}<br>
+                  <a href="{{ s.latitude|maps_url(s.longitude) }}" target="_blank" rel="noopener">View on map</a></td>
+                <td>{{ approval_tag(s.approval_status) }}
+                  {% if s.approval_note %}<br><span class="muted">{{ s.approval_note }}</span>{% endif %}</td>
+                <td>{% if s.approval_status == 'pending' %}{{ review_buttons(s, request.path) }}{% endif %}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">This farmer has not added any stock yet.</p>
+      {% endif %}
+    </div>
+  </details>
+{% else %}
+  <p class="muted">No farmers have registered yet.</p>
+{% endfor %}
+{% endblock %}

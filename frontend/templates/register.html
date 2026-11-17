@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set label = ROLE_LABELS.get(role, 'User') %}
+{% block title %}Register as {{ label }} · FarmLink{% endblock %}
+{% block content %}
+<form class="card narrow" method="post" id="register-form">
+  <h1>Register as {{ label }}</h1>
+  <input type="hidden" name="role" value="{{ role }}">
+  <label>Full name <input name="name" required minlength="2" value="{{ form.get('name', '') }}"></label>
+
+  <label>Phone number
+    <input name="phone" id="reg-phone" required minlength="10" placeholder="03xx xxxxxxx" autocomplete="tel" value="{{ form.get('phone', '') }}">
+  </label>
+  <div class="row otp-row">
+    <button type="button" class="btn secondary" id="send-otp">Send OTP</button>
+    <label>6-digit OTP
+      <input name="otp" id="reg-otp" required inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456">
+    </label>
+  </div>
+  <p class="muted" id="otp-status">We will send a 6-digit code to this number.</p>
+
+  <label>Password <input type="password" name="password" required minlength="6" autocomplete="new-password"></label>
+  <label>Language
+    <select name="language">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+      <option value="ps">پښتو</option>
+    </select>
+  </label>
+  <button class="btn" type="submit">Register</button>
+  <p class="muted">Already registered? <a href="{{ url_for('login', role=role) }}">Log in as {{ label }}</a></p>
+  {% if role == 'farmer' %}
+    <p class="muted">Farmers can start right away. Each new stock you add is checked by the admin before buyers see it.</p>
+  {% endif %}
+</form>
+{% endblock %}

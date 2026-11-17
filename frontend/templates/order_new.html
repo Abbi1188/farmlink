@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_location_picker.html" import location_picker %}
+{% block title %}Order · FarmLink{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block scripts_extra %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>{% endblock %}
+{% block content %}
+<h1>Order {{ listing.product_name }}</h1>
+<p>{{ listing.farm_name }} · {{ listing.city }}
+  {% if listing.distance_km is not none %}· {{ listing.distance_km }} km away{% endif %}</p>
+<p class="muted">{{ '%g'|format(listing.available_qty) }} {{ listing.unit }} available · Rs {{ '%g'|format(listing.price_per_unit) }} per {{ listing.unit }}</p>
+
+<form class="card narrow" method="post">
+  <input type="hidden" name="lat" value="{{ lat or '' }}">
+  <input type="hidden" name="lon" value="{{ lon or '' }}">
+
+  <label>Quantity ({{ listing.unit }})
+    <input type="number" name="qty" min="0.1" step="any" max="{{ listing.available_qty }}" value="{{ form.get('qty', 1) }}" required>
+  </label>
+
+  <label>How do you want it?
+    <select name="fulfilment_type" id="fulfilment_type">
+      <option value="pickup" {{ 'selected' if form.get('fulfilment_type', 'pickup') == 'pickup' }}>Pickup from the farm</option>
+      <option value="delivery" {{ 'selected' if form.get('fulfilment_type') == 'delivery' }}>Delivery to my address</option>
+    </select>
+  </label>
+
+  <div id="pickup-info" class="info-box">
+    <strong>Pickup point</strong>
+    <p>{{ listing.address_text }}, {{ listing.city }}</p>
+    <a class="btn secondary small" href="{{ listing.latitude|maps_url(listing.longitude) }}" target="_blank" rel="noopener">Open in Google Maps</a>
+    {% if not listing.pickup_available %}<p class="muted">This farm does not offer pickup. Choose delivery.</p>{% endif %}
+  </div>
+
+  <div id="delivery-fields" hidden>
+    {% if not listing.delivery_available %}
+      <p class="muted">Delivery is only possible when your address is inside the farm's delivery area. You will be told if it is not.</p>
+    {% endif %}
+    <h3>Delivery address</h3>
+    {{ location_picker(address_name='delivery_address', lat_name='delivery_lat', lon_name='delivery_lon',
+                       address=form.get('delivery_address', ''), lat=form.get('delivery_lat') or lat or '',
+                       lon=form.get('delivery_lon') or lon or '', required=false, autofill=true) }}
+  </div>
+
+  <label>Payment
+    <select name="payment_method">
+      <option value="cod">Cash on delivery or pickup</option>
+    </select>
+  </label>
+  <button class="btn" type="submit">Place order</button>
+</form>
+{% endblock %}

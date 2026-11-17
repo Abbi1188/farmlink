@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+{% if show_welcome %}{% include "_welcome_modal.html" %}{% endif %}
+
+<form class="search-hero" method="get" action="{{ url_for('index') }}">
+  <h1>Fresh from the farm, near you</h1>
+
+  {# The search bar comes first; everything else lives in the Filters panel. #}
+  <div class="searchbar">
+    <input type="search" name="q" value="{{ form.get('q', '') }}" placeholder="Search stock by name: wheat, milk, desi ghee, honey" aria-label="Search stock by name" autofocus>
+    <button type="submit" class="btn">Search</button>
+  </div>
+
+  <details class="filters" {{ 'open' if filters_active }}>
+    <summary class="btn secondary">Filters{% if filters_active %} (on){% endif %}</summary>
+    <div class="filters-body card">
+      <div class="row">
+        <label>City
+          <input name="city" value="{{ form.get('city', '') }}" placeholder="Peshawar">
+        </label>
+        <label>District
+          <input name="district" value="{{ form.get('district', '') }}">
+        </label>
+        <label>From region (origin)
+          <input name="origin" value="{{ form.get('origin', '') }}" placeholder="Swat">
+        </label>
+        <label>Within
+          <select name="radius_km">
+            <option value="">Any distance</option>
+            {% for km in (5, 10, 25, 50) %}
+              <option value="{{ km }}" {{ 'selected' if form.get('radius_km') == km|string }}>{{ km }} km</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" name="organic" {{ 'checked' if form.get('organic') }}> Organic only</label>
+        <label class="check"><input type="checkbox" name="deliverable_only" {{ 'checked' if form.get('deliverable_only') }}> Delivers to me</label>
+        <input type="hidden" name="lat" id="lat" value="{{ form.get('lat', '') }}">
+        <input type="hidden" name="lon" id="lon" value="{{ form.get('lon', '') }}">
+        <button type="button" class="btn secondary" id="use-location">Use my location</button>
+        <a class="btn secondary" href="{{ url_for('index') }}">Clear filters</a>
+      </div>
+      <p class="muted" id="location-status">
+        {% if form.get('lat') %}Location set. Press Search.{% else %}Set your location to see distances and delivery options.{% endif %}
+      </p>
+    </div>
+  </details>
+</form>
+
+{% if searched %}
+  <h2>{{ results|length }} result{{ '' if results|length == 1 else 's' }}</h2>
+  {% for r in results %}
+    {% with lat=form.get('lat'), lon=form.get('lon') %}{% include "_listing_card.html" %}{% endwith %}
+  {% else %}
+    <p class="muted">No stock matches. Try a different name or fewer filters.</p>
+  {% endfor %}
+{% else %}
+  {% if recent_searches %}
+    <section class="home-section">
+      <h2>Your recent searches</h2>
+      <p class="chips">
+        {% for term in recent_searches %}
+          <a class="chip" href="{{ url_for('index', q=term) }}">{{ term }}</a>
+        {% endfor %}
+      </p>
+    </section>
+  {% endif %}
+
+  <section class="home-section">
+    <h2>Popular stock</h2>
+    {% for r in popular %}{% include "_listing_card.html" %}
+    {% else %}<p class="muted">Nothing here yet. Stock appears once farmers add it and the admin approves it.</p>{% endfor %}
+  </section>
+
+  <section class="home-section">
+    <h2>Recently added</h2>
+    {% for r in recent %}{% include "_listing_card.html" %}
+    {% else %}<p class="muted">No new stock yet.</p>{% endfor %}
+  </section>
+{% endif %}
+{% endblock %}

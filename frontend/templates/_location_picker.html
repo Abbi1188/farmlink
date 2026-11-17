@@ -1,0 +1,34 @@
+{#
+  Reusable location field. The farmer or buyer can type an address, press "Detect my location"
+  (fills the address automatically), press "Find this address on the map", or click or drag the pin.
+  Hidden fields carry the coordinates. The JavaScript is in static/js/app.js.
+#}
+{% macro location_picker(address_name='address_text', lat_name='latitude', lon_name='longitude',
+                         address='', lat='', lon='', with_parts=false, city='', district='', province='',
+                         required=true, autofill=false) %}
+<div class="loc-picker" data-loc-picker data-country="pk"
+     {% if autofill %}data-autofill-address{% endif %}
+     data-require-coords>
+  <label>Address
+    <input type="text" name="{{ address_name }}" data-loc="address" value="{{ address }}"
+           {% if required %}required{% endif %} placeholder="House or street, area, city" autocomplete="street-address">
+  </label>
+  <div class="row">
+    <button type="button" class="btn secondary" data-loc-action="detect">Detect my location</button>
+    <button type="button" class="btn secondary" data-loc-action="find">Find this address on the map</button>
+  </div>
+  {% if with_parts %}
+    <div class="row">
+      <label>City <input name="city" data-loc="city" required value="{{ city }}"></label>
+      <label>District <input name="district" data-loc="district" required value="{{ district }}"></label>
+      <label>Province <input name="province" data-loc="province" required value="{{ province }}"></label>
+    </div>
+  {% endif %}
+  <div class="loc-map" data-loc="map" hidden></div>
+  <p class="muted" data-loc="status">
+    {% if lat and lon %}Location set ({{ lat }}, {{ lon }}). Drag the pin to adjust.{% else %}Type the address and press "Find this address", or use "Detect my location".{% endif %}
+  </p>
+  <input type="hidden" name="{{ lat_name }}" data-loc="lat" value="{{ lat }}">
+  <input type="hidden" name="{{ lon_name }}" data-loc="lon" value="{{ lon }}">
+</div>
+{% endmacro %}

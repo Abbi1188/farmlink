@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_admin_macros.html" import account_action %}
+{% block title %}Buyers · FarmLink{% endblock %}
+{% block content %}
+<h1>Buyers (users)</h1>
+<p class="muted">{{ buyers|length }} registered.</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Name</th><th>Phone</th><th>Account</th><th>Joined</th><th></th></tr></thead>
+    <tbody>
+    {% for u in buyers %}
+      <tr>
+        <td>{{ u.name }}</td>
+        <td>{{ u.phone }}</td>
+        <td>{{ 'Active' if u.is_active else 'Suspended' }}</td>
+        <td>{{ u.created_at|dt }}</td>
+        <td>{{ account_action(u, request.path) }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted">No buyers have registered yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

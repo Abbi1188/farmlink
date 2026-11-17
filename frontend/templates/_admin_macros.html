@@ -1,0 +1,34 @@
+{% macro account_action(u, back) %}
+  {% if u.is_active %}
+    <form class="inline" method="post" action="{{ url_for('admin_user_action', user_id=u.id, action='suspend') }}"
+          onsubmit="return confirm('Suspend this account?');">
+      <input type="hidden" name="next" value="{{ back }}">
+      <button class="btn small secondary" type="submit">Suspend account</button>
+    </form>
+  {% else %}
+    <form class="inline" method="post" action="{{ url_for('admin_user_action', user_id=u.id, action='activate') }}">
+      <input type="hidden" name="next" value="{{ back }}">
+      <button class="btn small" type="submit">Re-activate account</button>
+    </form>
+  {% endif %}
+{% endmacro %}
+
+{% macro review_buttons(s, back) %}
+  <div class="actions">
+    <form class="inline" method="post" action="{{ url_for('admin_stock_action', listing_id=s.id, action='approve') }}">
+      <input type="hidden" name="next" value="{{ back }}">
+      <button class="btn small" type="submit">Approve</button>
+    </form>
+    <form class="inline" method="post" action="{{ url_for('admin_stock_action', listing_id=s.id, action='reject') }}">
+      <input type="hidden" name="next" value="{{ back }}">
+      <input name="reason" placeholder="Reason (optional)" maxlength="200">
+      <button class="btn small secondary" type="submit">Reject</button>
+    </form>
+  </div>
+{% endmacro %}
+
+{% macro approval_tag(status) %}
+  <span class="tag {{ 'ok' if status == 'approved' else ('warn' if status == 'pending' else 'bad') }}">
+    {{ 'Approved' if status == 'approved' else ('Pending approval' if status == 'pending' else 'Rejected') }}
+  </span>
+{% endmacro %}

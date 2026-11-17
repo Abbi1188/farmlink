@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_location_picker.html" import location_picker %}
+{% block title %}Farm profile · FarmLink{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block scripts_extra %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>{% endblock %}
+{% block content %}
+<h1>{{ 'Edit farm profile' if farm else 'Set up your farm' }}</h1>
+<p class="muted">Your farm needs no approval. Each new stock you add is reviewed by the admin.</p>
+
+<form class="card" method="post">
+  <label>Farm name <input name="farm_name" required value="{{ farm.farm_name if farm else '' }}"></label>
+  <label>About your farm <textarea name="description" rows="3">{{ farm.description if farm and farm.description else '' }}</textarea></label>
+
+  <h3>Farm location</h3>
+  {{ location_picker(address=farm.address_text if farm else '', lat=farm.latitude if farm else '', lon=farm.longitude if farm else '',
+                     with_parts=true, city=farm.city if farm else '', district=farm.district if farm else '',
+                     province=farm.province if farm else 'Khyber Pakhtunkhwa') }}
+
+  <h3>Pickup and delivery</h3>
+  <label class="check"><input type="checkbox" name="pickup_enabled" {{ 'checked' if not farm or farm.pickup_enabled }}> Buyers can pick up from the farm</label>
+  <label>Pickup hours <input name="pickup_hours" placeholder="9am - 6pm" value="{{ farm.pickup_hours if farm and farm.pickup_hours else '' }}"></label>
+  <label class="check"><input type="checkbox" name="delivery_enabled" {{ 'checked' if farm and farm.delivery_enabled }}> I deliver</label>
+  <div class="row">
+    <label>Delivery radius (km) <input type="number" step="0.5" name="delivery_radius_km" value="{{ farm.delivery_radius_km if farm else 10 }}"></label>
+    <label>Delivery fee (Rs) <input type="number" step="1" name="delivery_fee" value="{{ farm.delivery_fee if farm else 0 }}"></label>
+    <label>Minimum order (Rs) <input type="number" step="1" name="min_order" value="{{ farm.min_order if farm else 0 }}"></label>
+  </div>
+  <button class="btn" type="submit">Save profile</button>
+</form>
+{% endblock %}

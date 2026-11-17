@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Orders · FarmLink{% endblock %}
+{% block content %}
+<h1>Incoming orders</h1>
+
+{% macro action(order, status, label, secondary=false) %}
+  <form class="inline" method="post" action="{{ url_for('farmer_order_status', order_id=order.id) }}">
+    <input type="hidden" name="status" value="{{ status }}">
+    <button class="btn small {{ 'secondary' if secondary }}" type="submit">{{ label }}</button>
+  </form>
+{% endmacro %}
+
+{% for o in orders %}
+  <article class="card">
+    <h3>Order #{{ o.id }} <span class="tag">{{ o.status.replace('_', ' ') }}</span>
+      <span class="tag">{{ o.fulfilment_type }}</span></h3>
+    <ul>
+      {% for i in o['items'] %}<li>{{ '%g'|format(i.qty) }} × {{ i.product_name }} at Rs {{ '%g'|format(i.unit_price) }}</li>{% endfor %}
+    </ul>
+    <p>Total: <strong>Rs {{ '%g'|format(o.total) }}</strong> ({{ o.payment_method }}, {{ o.payment_status }})
+      {% if o.delivery_address %}· Deliver to: {{ o.delivery_address }}{% endif %}</p>
+
+    <div class="actions">
+      {% if o.status == 'placed' %}
+        {{ action(o, 'accepted', 'Accept') }}
+        {{ action(o, 'rejected', 'Reject', true) }}
+      {% elif o.status == 'accepted' %}
+        {{ action(o, 'preparing', 'Start preparing') }}
+      {% elif o.status == 'preparing' %}
+        {% if o.fulfilment_type == 'pickup' %}{{ action(o, 'ready_for_pickup', 'Ready for pickup') }}
+        {% else %}{{ action(o, 'out_for_delivery', 'Out for delivery') }}{% endif %}
+      {% elif o.status in ('ready_for_pickup', 'out_for_delivery') %}
+        <form class="inline" method="post" action="{{ url_for('farmer_order_status', order_id=o.id) }}">
+          <input type="hidden" name="status" value="completed">
+          <input name="code" maxlength="4" placeholder="Buyer's 4-digit code" required>
+          <button class="btn small" type="submit">Complete</button>
+        </form>
+      {% endif %}
+    </div>
+  </article>
+{% else %}
+  <p class="muted">No orders yet.</p>
+{% endfor %}
+{% endblock %}

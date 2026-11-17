@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My orders · FarmLink{% endblock %}
+{% block content %}
+<h1>My orders</h1>
+{% for o in orders %}
+  <article class="card">
+    <h3>Order #{{ o.id }} <span class="tag">{{ o.status.replace('_', ' ') }}</span>
+      <span class="tag">{{ o.fulfilment_type }}</span></h3>
+    <ul>
+      {% for i in o['items'] %}<li>{{ '%g'|format(i.qty) }} × {{ i.product_name }}</li>{% endfor %}
+    </ul>
+    <p>Total: <strong>Rs {{ '%g'|format(o.total) }}</strong>
+      {% if o.delivery_fee %}(includes Rs {{ '%g'|format(o.delivery_fee) }} delivery){% endif %}</p>
+    {% if o.status not in ('completed', 'rejected', 'cancelled', 'failed_delivery') %}
+      <p>Your {{ 'delivery' if o.fulfilment_type == 'delivery' else 'pickup' }} code:
+        <strong class="code">{{ o.confirmation_code }}</strong>
+        <span class="muted">Tell it to the farmer only when you receive your order.</span></p>
+    {% endif %}
+    {% if o.rejection_reason %}<p class="muted">Reason: {{ o.rejection_reason }}</p>{% endif %}
+    {% if o.status == 'placed' %}
+      <form method="post" action="{{ url_for('order_cancel', order_id=o.id) }}">
+        <button class="btn secondary small" type="submit">Cancel order</button>
+      </form>
+    {% endif %}
+  </article>
+{% else %}
+  <p class="muted">You have not placed any orders yet. <a href="{{ url_for('index') }}">Find stock</a></p>
+{% endfor %}
+{% endblock %}

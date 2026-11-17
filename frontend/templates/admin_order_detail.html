@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }} · FarmLink{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('admin_orders') }}">&larr; All orders</a></p>
+<h1>Order #{{ order.id }}
+  <span class="tag {{ 'ok' if order.status == 'completed' else ('bad' if order.status in ('rejected', 'cancelled', 'failed_delivery') else 'warn') }}">{{ order.status.replace('_', ' ') }}</span>
+</h1>
+<p class="muted">Placed {{ order.placed_at|dt }} · {{ order.fulfilment_type.capitalize() }} · Payment: {{ order.payment_method }} ({{ order.payment_status }})</p>
+
+{% macro place_card(title, p) %}
+  <section class="card place">
+    <h2>{{ title }}</h2>
+    <h3>{{ p.name }}</h3>
+    <p class="muted">{{ p.kind }}</p>
+    <p>{{ p.address }}{% if p.city %}, {{ p.city }}{% endif %}{% if p.district and p.district != p.city %}, {{ p.district }}{% endif %}</p>
+    <p>Contact: {{ p.contact_name }} · <a href="tel:{{ p.contact_phone }}">{{ p.contact_phone }}</a></p>
+    {% if p.latitude is not none and p.longitude is not none %}
+      <a class="btn secondary small" href="{{ p.latitude|maps_url(p.longitude) }}" target="_blank" rel="noopener">View on map</a>
+    {% endif %}
+  </section>
+{% endmacro %}
+
+<div class="route">
+  {{ place_card('From (source)', order.source) }}
+  <div class="route-arrow" aria-hidden="true">&rarr;
+    {% if order.distance_km is not none %}<small>{{ order.distance_km }} km</small>{% endif %}
+  </div>
+  {{ place_card('To (destination)', order.destination) }}
+</div>
+
+{% if order.fulfilment_type == 'delivery' and order.destination.latitude is not none %}
+  <p><a class="btn" href="{{ order.source.latitude|route_url(order.source.longitude, order.destination.latitude, order.destination.longitude) }}"
+        target="_blank" rel="noopener">Show the route on Google Maps</a></p>
+{% endif %}
+
+<h2>Progress</h2>
+<ol class="timeline">
+  {% for e in order.events %}
+    <li><strong>{{ e.status.replace('_', ' ').capitalize() }}</strong> <span class="muted">{{ e.at|dt }}</span></li>
+  {% endfor %}
+</ol>
+{% if order.rejection_reason %}<p class="muted">Reason: {{ order.rejection_reason }}</p>{% endif %}
+
+<h2>Items</h2>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Line total</th></tr></thead>
+    <tbody>
+    {% for i in order['items'] %}
+      <tr><td>{{ i.product_name }}</td><td>{{ '%g'|format(i.qty) }}</td><td>Rs {{ '%g'|format(i.unit_price) }}</td><td>Rs {{ '%g'|format(i.qty * i.unit_price) }}</td></tr>
+    {% endfor %}
+    <tr><td colspan="3">Subtotal</td><td>Rs {{ '%g'|format(order.subtotal) }}</td></tr>
+    {% if order.delivery_fee %}<tr><td colspan="3">Delivery fee</td><td>Rs {{ '%g'|format(order.delivery_fee) }}</td></tr>{% endif %}
+    <tr><td colspan="3"><strong>Total</strong></td><td><strong>Rs {{ '%g'|format(order.total) }}</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{# Three ways in: Farmer, User (buyer) and Admin. The admin account is built in, so it has no Register button. #}
+<div class="role-cards">
+  <section class="role-card">
+    <h3>Farmer</h3>
+    <p class="muted">I grow and sell fresh stock.</p>
+    <a class="btn" href="{{ url_for('login', role='farmer') }}">Log in as Farmer</a>
+    <a class="btn secondary" href="{{ url_for('register', role='farmer') }}">Register as Farmer</a>
+  </section>
+  <section class="role-card">
+    <h3>User</h3>
+    <p class="muted">I want to buy fresh stock.</p>
+    <a class="btn" href="{{ url_for('login', role='buyer') }}">Log in as User</a>
+    <a class="btn secondary" href="{{ url_for('register', role='buyer') }}">Register as User</a>
+  </section>
+  <section class="role-card">
+    <h3>Admin</h3>
+    <p class="muted">Manage farmers, stock and orders.</p>
+    <a class="btn" href="{{ url_for('login', role='admin') }}">Log in as Admin</a>
+  </section>
+</div>
