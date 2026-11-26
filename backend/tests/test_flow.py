@@ -1,14 +1,8 @@
-<<<<<<< HEAD
 """End-to-end checks of the main rules: OTP sign-up, per-stock admin approval, location search,
 stock reservation, order lifecycle, admin lists and order tracking."""
 from app.config import settings
 from app.models.catalog import Category, Product
 from app.services.bootstrap import ensure_default_admin
-=======
-"""End-to-end checks of the main rules: approval, location search, stock reservation, order lifecycle."""
-from app.models.catalog import Category, Product
-from app.models.farm import FarmProfile
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 FARM = {
     "farm_name": "Green Acres",
@@ -28,21 +22,20 @@ FARM = {
 
 
 def signup(client, phone, role):
-<<<<<<< HEAD
     otp = client.post("/auth/otp/request", json={"phone": phone})
     assert otp.status_code == 200, otp.text
     r = client.post(
         "/auth/register",
-        json={"name": f"{role} user", "phone": phone, "password": "secret123", "role": role, "otp": otp.json()["dev_otp"]},
+        json={
+            "name": f"{role} user", "phone": phone, "password": "secret123", "role": role,
+            "otp": otp.json()["dev_otp"],
+            "cnic": f"35202{phone[-7:]}1",  # farmers need a CNIC; buyers ignore it
+        },
     )
-=======
-    r = client.post("/auth/register", json={"name": f"{role} user", "phone": phone, "password": "secret123", "role": role})
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     assert r.status_code == 201, r.text
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
-<<<<<<< HEAD
 def admin_headers(client, db_session):
     ensure_default_admin(db_session)
     r = client.post("/auth/login", data={"username": settings.admin_phone, "password": settings.admin_password})
@@ -50,8 +43,6 @@ def admin_headers(client, db_session):
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 def listing_payload(product_id, qty=10):
     return {
         "product_id": product_id,
@@ -69,7 +60,6 @@ def listing_payload(product_id, qty=10):
     }
 
 
-<<<<<<< HEAD
 def setup_farm_and_product(client, db_session, phone="03001111111"):
     farmer = signup(client, phone, "farmer")
     farm = client.post("/farms/profile", json=FARM, headers=farmer).json()
@@ -82,21 +72,10 @@ def setup_farm_and_product(client, db_session, phone="03001111111"):
     if not product:
         product = Product(name="Milk", category_id=category.id, default_unit="litre")
         db_session.add(product)
-=======
-def setup_farm_and_product(client, db_session):
-    farmer = signup(client, "03001111111", "farmer")
-    farm = client.post("/farms/profile", json=FARM, headers=farmer).json()
-    category = Category(name="Dairy")
-    db_session.add(category)
-    db_session.flush()
-    product = Product(name="Milk", category_id=category.id, default_unit="litre")
-    db_session.add(product)
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     db_session.commit()
     return farmer, farm, product
 
 
-<<<<<<< HEAD
 def publish_approved(client, db_session, farmer, product_id, qty=10):
     """Farmer adds stock; the admin approves it."""
     listing = client.post("/stock", json=listing_payload(product_id, qty), headers=farmer)
@@ -110,13 +89,31 @@ def publish_approved(client, db_session, farmer, product_id, qty=10):
 def test_register_needs_the_right_otp(client):
     phone = "03005555555"
     code = client.post("/auth/otp/request", json={"phone": phone}).json()["dev_otp"]
-    payload = {"name": "Ali Khan", "phone": phone, "password": "secret123", "role": "farmer"}
+    payload = {"name": "Ali Khan", "phone": phone, "password": "secret123", "role": "farmer", "cnic": "35202-1234567-1"}
 
     wrong = "000000" if code != "000000" else "111111"
     assert client.post("/auth/register", json={**payload, "otp": wrong}).status_code == 400
     assert client.post("/auth/register", json={**payload, "otp": code}).status_code == 201
     # the code works once only, and the phone is now taken
     assert client.post("/auth/register", json={**payload, "otp": code}).status_code == 409
+
+
+def test_farmer_needs_a_valid_unique_cnic(client):
+    def register(phone, **extra):
+        code = client.post("/auth/otp/request", json={"phone": phone}).json()["dev_otp"]
+        body = {"name": "Farmer", "phone": phone, "password": "secret123", "role": "farmer", "otp": code, **extra}
+        return client.post("/auth/register", json=body)
+
+    assert register("03007770001").status_code == 422  # no CNIC
+    assert register("03007770001", cnic="1234").status_code == 422  # too short
+    assert register("03007770001", cnic="3520212345671").status_code == 201  # digits only is accepted
+    assert register("03007770002", cnic="35202-1234567-1").status_code == 409  # same CNIC, formatted differently
+
+
+def test_buyer_does_not_need_a_cnic(client):
+    code = client.post("/auth/otp/request", json={"phone": "03007770003"}).json()["dev_otp"]
+    body = {"name": "Buyer", "phone": "03007770003", "password": "secret123", "role": "buyer", "otp": code}
+    assert client.post("/auth/register", json=body).status_code == 201
 
 
 def test_admin_cannot_register(client):
@@ -187,32 +184,12 @@ def test_buyer_cannot_order_stock_that_is_not_approved(client, db_session):
 def test_location_search_and_pickup_order(client, db_session):
     farmer, farm, product = setup_farm_and_product(client, db_session)
     publish_approved(client, db_session, farmer, product.id)
-=======
-def approve(db_session, farm_id):
-    db_session.get(FarmProfile, farm_id).verification_status = "approved"
-    db_session.commit()
-
-
-def test_unapproved_farm_cannot_publish(client, db_session):
-    farmer, farm, product = setup_farm_and_product(client, db_session)
-    r = client.post("/stock", json=listing_payload(product.id), headers=farmer)
-    assert r.status_code == 403
-
-
-def test_location_search_and_pickup_order(client, db_session):
-    farmer, farm, product = setup_farm_and_product(client, db_session)
-    approve(db_session, farm["id"])
-    assert client.post("/stock", json=listing_payload(product.id), headers=farmer).status_code == 201
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
     results = client.get("/search", params={"q": "milk", "lat": 34.02, "lon": 71.53}).json()
     assert len(results) == 1
     assert results[0]["fulfilment_label"] == "Delivers to you"
-<<<<<<< HEAD
     # the stock location is returned so the app can open it in Google Maps
     assert results[0]["latitude"] == 34.0151 and results[0]["address_text"] == "Ring Road, Peshawar"
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     assert client.get("/search", params={"q": "milk", "origin": "Swat"}).json() == []
 
     buyer = signup(client, "03002222222", "buyer")
@@ -224,20 +201,11 @@ def test_location_search_and_pickup_order(client, db_session):
     assert order.status_code == 201, order.text
     order = order.json()
 
-<<<<<<< HEAD
     assert client.get("/search", params={"q": "milk"}).json()[0]["available_qty"] == 8  # reserved at once
-=======
-    # stock is reserved at once
-    assert client.get("/search", params={"q": "milk"}).json()[0]["available_qty"] == 8
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
     oid = order["id"]
     for status in ("accepted", "preparing", "ready_for_pickup"):
         assert client.post(f"/orders/{oid}/status", json={"status": status}, headers=farmer).status_code == 200
-<<<<<<< HEAD
-=======
-    # completing without the buyer's code is refused
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     assert client.post(f"/orders/{oid}/status", json={"status": "completed"}, headers=farmer).status_code == 400
     done = client.post(
         f"/orders/{oid}/status", json={"status": "completed", "code": order["confirmation_code"]}, headers=farmer
@@ -247,33 +215,16 @@ def test_location_search_and_pickup_order(client, db_session):
 
 def test_cannot_order_more_than_available_and_cancel_releases_stock(client, db_session):
     farmer, farm, product = setup_farm_and_product(client, db_session)
-<<<<<<< HEAD
     listing = publish_approved(client, db_session, farmer, product.id, qty=5)
     buyer = signup(client, "03002222222", "buyer")
 
     too_much = client.post(
         "/orders", json={"items": [{"listing_id": listing["id"], "qty": 6}], "fulfilment_type": "pickup"}, headers=buyer
-=======
-    approve(db_session, farm["id"])
-    listing = client.post("/stock", json=listing_payload(product.id, qty=5), headers=farmer).json()
-    buyer = signup(client, "03002222222", "buyer")
-
-    too_much = client.post(
-        "/orders",
-        json={"items": [{"listing_id": listing["id"], "qty": 6}], "fulfilment_type": "pickup"},
-        headers=buyer,
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     )
     assert too_much.status_code == 400
 
     ok = client.post(
-<<<<<<< HEAD
         "/orders", json={"items": [{"listing_id": listing["id"], "qty": 5}], "fulfilment_type": "pickup"}, headers=buyer
-=======
-        "/orders",
-        json={"items": [{"listing_id": listing["id"], "qty": 5}], "fulfilment_type": "pickup"},
-        headers=buyer,
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     ).json()
     assert client.get("/search", params={"q": "milk"}).json() == []  # sold out, hidden from search
 
@@ -284,12 +235,7 @@ def test_cannot_order_more_than_available_and_cancel_releases_stock(client, db_s
 
 def test_delivery_outside_radius_is_refused(client, db_session):
     farmer, farm, product = setup_farm_and_product(client, db_session)
-<<<<<<< HEAD
     listing = publish_approved(client, db_session, farmer, product.id)
-=======
-    approve(db_session, farm["id"])
-    listing = client.post("/stock", json=listing_payload(product.id), headers=farmer).json()
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     buyer = signup(client, "03002222222", "buyer")
     r = client.post(
         "/orders",
@@ -306,7 +252,6 @@ def test_delivery_outside_radius_is_refused(client, db_session):
     assert "delivers within" in r.json()["detail"]
 
 
-<<<<<<< HEAD
 def test_popular_and_recent_for_the_home_page(client, db_session):
     farmer, farm, product = setup_farm_and_product(client, db_session)
     wheat = Product(name="Wheat", category_id=product.category_id, default_unit="kg")
@@ -392,26 +337,3 @@ def test_pickup_order_destination_is_the_stock_location(client, db_session):
     assert order["destination"]["kind"] == "Pickup at the stock location"
     assert order["destination"]["address"] == order["source"]["address"]
     assert order["distance_km"] is None
-=======
-def test_admin_lists_users_and_pending_farms(client, db_session):
-    from app.core.constants import Role
-    from app.core.security import hash_password
-    from app.models.user import User
-
-    farmer = signup(client, "03002222222", "farmer")
-    signup(client, "03003333333", "buyer")
-    client.post("/farms/profile", json=FARM, headers=farmer)
-    db_session.add(User(name="Admin", phone="03000000009", password_hash=hash_password("admin123"), role=Role.ADMIN))
-    db_session.commit()
-    token = client.post("/auth/login", data={"username": "03000000009", "password": "admin123"}).json()["access_token"]
-    admin = {"Authorization": f"Bearer {token}"}
-
-    assert client.get("/admin/users", headers=farmer).status_code == 403
-    assert [u["role"] for u in client.get("/admin/users?role=buyer", headers=admin).json()] == ["buyer"]
-    farmers = client.get("/admin/users?role=farmer", headers=admin).json()
-    assert farmers[0]["farm_status"] == "pending"
-    pending = client.get("/admin/farms/pending", headers=admin).json()
-    assert len(pending) == 1 and pending[0]["owner_phone"] == "03002222222"
-    assert client.post(f"/admin/farms/{pending[0]['id']}/approve", headers=admin).status_code == 200
-    assert client.get("/admin/farms/pending", headers=admin).json() == []
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224

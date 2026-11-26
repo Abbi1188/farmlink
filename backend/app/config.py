@@ -7,13 +7,12 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
-    app_name: str = "FarmLink"
+    app_name: str = "FarmBridge"
     database_url: str = f"sqlite:///{(ROOT_DIR / 'database' / 'farmlink.db').as_posix()}"
     secret_key: str = "change-this-secret-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
     cors_origins: list[str] = ["http://localhost:5000", "http://127.0.0.1:5000"]
-<<<<<<< HEAD
     order_response_timeout_minutes: int = 30
 
     # Registration OTP. While no SMS provider is connected, keep otp_debug_return=True so the
@@ -28,11 +27,6 @@ class Settings(BaseSettings):
     admin_phone: str = "03000000000"
     admin_password: str = "admin123"
 
-=======
-    require_farm_approval: bool = True
-    order_response_timeout_minutes: int = 30
-
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     model_config = SettingsConfigDict(env_file=ROOT_DIR / "backend" / ".env", extra="ignore")
 
 

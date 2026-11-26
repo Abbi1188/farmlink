@@ -30,7 +30,7 @@ class OtpError(Exception):
 def send_sms(phone: str, message: str) -> None:
     # TODO: connect an SMS provider here. For now the message only goes to the server log.
     log.warning("SMS to %s: %s", phone, message)
-    print(f"[FarmLink OTP] SMS to {phone}: {message}")
+    print(f"[FarmBridge OTP] SMS to {phone}: {message}")
 
 
 def _hash(phone: str, code: str) -> str:
@@ -54,7 +54,7 @@ def request_otp(db: Session, phone: str) -> str:
         )
     )
     db.commit()
-    send_sms(phone, f"Your FarmLink code is {code}. It expires in {settings.otp_expire_minutes} minutes.")
+    send_sms(phone, f"Your FarmBridge code is {code}. It expires in {settings.otp_expire_minutes} minutes.")
     return code
 
 

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-<<<<<<< HEAD
 {% set label = ROLE_LABELS.get(role, 'User') %}
 {% block title %}Register as {{ label }} · FarmLink{% endblock %}
 {% block content %}
@@ -20,21 +19,6 @@
   <p class="muted" id="otp-status">We will send a 6-digit code to this number.</p>
 
   <label>Password <input type="password" name="password" required minlength="6" autocomplete="new-password"></label>
-=======
-{% block title %}Sign up · FarmLink{% endblock %}
-{% block content %}
-<form class="card narrow" method="post">
-  <h1>Create account</h1>
-  <label>Full name <input name="name" required minlength="2"></label>
-  <label>Phone number <input name="phone" required minlength="10" placeholder="03xx xxxxxxx"></label>
-  <label>Password <input type="password" name="password" required minlength="6"></label>
-  <label>I am a
-    <select name="role">
-      <option value="buyer">Buyer (I want to buy)</option>
-      <option value="farmer">Farmer (I want to sell)</option>
-    </select>
-  </label>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
   <label>Language
     <select name="language">
       <option value="en">English</option>
@@ -42,15 +26,10 @@
       <option value="ps">پښتو</option>
     </select>
   </label>
-<<<<<<< HEAD
   <button class="btn" type="submit">Register</button>
   <p class="muted">Already registered? <a href="{{ url_for('login', role=role) }}">Log in as {{ label }}</a></p>
   {% if role == 'farmer' %}
     <p class="muted">Farmers can start right away. Each new stock you add is checked by the admin before buyers see it.</p>
   {% endif %}
-=======
-  <button class="btn" type="submit">Sign up</button>
-  <p class="muted">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 </form>
 {% endblock %}

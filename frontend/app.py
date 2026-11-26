@@ -1,22 +1,15 @@
 """FarmLink web frontend (Flask). Talks to the FastAPI backend through api_client.api()."""
 import os
-<<<<<<< HEAD
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
-=======
-from functools import wraps
-
-from flask import Flask, flash, redirect, render_template, request, session, url_for
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 from api_client import api
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-only-secret-change-me")
 
-<<<<<<< HEAD
 # The server stores times in UTC. Show them in local time (Pakistan = UTC+5, no daylight saving).
 DISPLAY_UTC_OFFSET_HOURS = float(os.environ.get("DISPLAY_UTC_OFFSET_HOURS", "5"))
 
@@ -41,8 +34,6 @@ def _float(value, default=None):
     except (TypeError, ValueError):
         return default
 
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 def login_required(role: str | None = None):
     def decorator(view):
@@ -51,18 +42,11 @@ def login_required(role: str | None = None):
             user = session.get("user")
             if not user:
                 flash("Please log in first.", "warning")
-<<<<<<< HEAD
                 here = request.full_path if request.query_string else request.path
                 return redirect(url_for("login", role=role or "buyer", next=here))
             if role and user["role"] != role:
                 flash("You do not have access to that page.", "danger")
                 return redirect(_home_for(user["role"]))
-=======
-                return redirect(url_for("login"))
-            if role and user["role"] != role:
-                flash("You do not have access to that page.", "danger")
-                return redirect(url_for("index"))
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
             return view(*args, **kwargs)
 
         return wrapper
@@ -70,7 +54,6 @@ def login_required(role: str | None = None):
     return decorator
 
 
-<<<<<<< HEAD
 @app.context_processor
 def inject_globals():
     return {"current_user": session.get("user"), "ROLE_LABELS": ROLE_LABELS}
@@ -151,49 +134,11 @@ def index():
     if searched:
         if params["q"]:
             _remember_search(params["q"])
-=======
-def _float(value, default=None):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _home_for(role: str) -> str:
-    return url_for({"farmer": "farmer_dashboard", "admin": "admin_dashboard"}.get(role, "index"))
-
-
-@app.context_processor
-def inject_user():
-    return {"current_user": session.get("user")}
-
-
-# ---------- Public: search ----------
-@app.route("/")
-def index():
-    params = {
-        "q": request.args.get("q", "").strip(),
-        "city": request.args.get("city", "").strip(),
-        "district": request.args.get("district", "").strip(),
-        "origin": request.args.get("origin", "").strip(),
-        "radius_km": request.args.get("radius_km", "").strip(),
-        "lat": request.args.get("lat", "").strip(),
-        "lon": request.args.get("lon", "").strip(),
-    }
-    if request.args.get("organic"):
-        params["organic"] = "true"
-    if request.args.get("deliverable_only"):
-        params["deliverable_only"] = "true"
-
-    results, searched = [], any(request.args.values())
-    if searched:
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
         ok, data = api("GET", "/search", params={k: v for k, v in params.items() if v})
         if ok:
             results = data
         else:
             flash(data, "danger")
-<<<<<<< HEAD
     else:
         ok_p, data_p = api("GET", "/listings/popular", params={"limit": 6})
         ok_r, data_r = api("GET", "/listings/recent", params={"limit": 6})
@@ -218,15 +163,11 @@ def index():
         recent_searches=session.get("recent_searches", []),
         show_welcome=show_welcome,
     )
-=======
-    return render_template("index.html", results=results, searched=searched, form=request.args)
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 # ---------- Auth ----------
 @app.route("/register", methods=["GET", "POST"])
 def register():
-<<<<<<< HEAD
     role = request.values.get("role", "buyer")
     if role == "admin":
         flash("There is only one admin account. Please log in.", "warning")
@@ -237,15 +178,10 @@ def register():
     if request.method == "POST":
         payload = {k: request.form.get(k, "").strip() for k in ("name", "phone", "password", "otp", "language")}
         payload["role"] = role
-=======
-    if request.method == "POST":
-        payload = {k: request.form.get(k, "").strip() for k in ("name", "phone", "password", "role", "language")}
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
         ok, data = api("POST", "/auth/register", json=payload)
         if ok:
             session["token"], session["user"] = data["access_token"], data["user"]
             flash("Welcome to FarmLink!", "success")
-<<<<<<< HEAD
             if role == "farmer":
                 flash("Set up your farm to start adding stock.", "success")
             return redirect(_home_for(role))
@@ -261,28 +197,19 @@ def register_otp():
     if ok:
         return jsonify(ok=True, **data)
     return jsonify(ok=False, error=data), 400
-=======
-            return redirect(_home_for(data["user"]["role"]))
-        flash(data, "danger")
-    return render_template("register.html")
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-<<<<<<< HEAD
     role = request.values.get("role", "buyer")
     if role not in ROLE_LABELS:
         role = "buyer"
     nxt = _safe_next(request.values.get("next"))
 
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     if request.method == "POST":
         ok, data = api(
             "POST", "/auth/login", data={"username": request.form["phone"].strip(), "password": request.form["password"]}
         )
-<<<<<<< HEAD
         if ok and data["user"]["role"] != role:
             actual = ROLE_LABELS.get(data["user"]["role"], data["user"]["role"])
             flash(f"This is a {actual} account. Please use the {actual} login.", "danger")
@@ -292,13 +219,6 @@ def login():
         else:
             flash(data, "danger")
     return render_template("login.html", role=role, next=nxt)
-=======
-        if ok:
-            session["token"], session["user"] = data["access_token"], data["user"]
-            return redirect(_home_for(data["user"]["role"]))
-        flash(data, "danger")
-    return render_template("login.html")
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 @app.route("/logout")
@@ -307,11 +227,7 @@ def logout():
     return redirect(url_for("index"))
 
 
-<<<<<<< HEAD
 # ---------- Buyer: ordering ----------
-=======
-# ---------- Buyer ----------
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 @app.route("/order/new/<int:listing_id>", methods=["GET", "POST"])
 @login_required("buyer")
 def order_new(listing_id):
@@ -335,11 +251,7 @@ def order_new(listing_id):
             flash(f"Order #{data['id']} placed. Your code is {data['confirmation_code']}.", "success")
             return redirect(url_for("orders"))
         flash(data, "danger")
-<<<<<<< HEAD
     return render_template("order_new.html", listing=listing, lat=lat, lon=lon, form=request.form)
-=======
-    return render_template("order_new.html", listing=listing, lat=lat, lon=lon)
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 @app.route("/orders")
@@ -385,11 +297,7 @@ def farm_profile():
         }
         ok, data = api("PUT" if farm else "POST", "/farms/profile", json=payload)
         if ok:
-<<<<<<< HEAD
             flash("Farm profile saved. You can add your stock now.", "success")
-=======
-            flash("Farm profile saved. An admin will review it before you can publish stock.", "success")
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
             return redirect(url_for("farmer_dashboard"))
         flash(data, "danger")
     return render_template("farm_profile.html", farm=farm)
@@ -427,14 +335,10 @@ def farmer_add_stock():
         "origin_tag": f.get("origin_tag") or None,
     }
     ok, data = api("POST", "/stock", json=payload)
-<<<<<<< HEAD
     if ok:
         flash("Stock sent to the admin for approval. Buyers will see it once it is approved.", "success")
     else:
         flash(data, "danger")
-=======
-    flash("Stock published." if ok else data, "success" if ok else "danger")
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     return redirect(url_for("farmer_dashboard"))
 
 
@@ -477,7 +381,6 @@ def farmer_order_status(order_id):
 @app.route("/admin")
 @login_required("admin")
 def admin_dashboard():
-<<<<<<< HEAD
     ok, stats = api("GET", "/admin/stats")
     if not ok:
         flash(stats, "danger")
@@ -547,32 +450,11 @@ def admin_stock_action(listing_id, action):
         "success" if ok else "danger",
     )
     return redirect(back)
-=======
-    ok, pending = api("GET", "/admin/farms/pending")
-    if not ok:
-        flash(pending, "danger")
-    _, farmers = api("GET", "/admin/users", params={"role": "farmer"})
-    _, buyers = api("GET", "/admin/users", params={"role": "buyer"})
-    return render_template(
-        "admin_dashboard.html", pending=pending if ok else [], farmers=farmers or [], buyers=buyers or []
-    )
-
-
-@app.route("/admin/farms/<int:farm_id>/<action>", methods=["POST"])
-@login_required("admin")
-def admin_farm_action(farm_id, action):
-    if action not in ("approve", "reject"):
-        return redirect(url_for("admin_dashboard"))
-    ok, data = api("POST", f"/admin/farms/{farm_id}/{action}")
-    flash(f"Farm {action}d." if ok else data, "success" if ok else "danger")
-    return redirect(url_for("admin_dashboard"))
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 @app.route("/admin/users/<int:user_id>/<action>", methods=["POST"])
 @login_required("admin")
 def admin_user_action(user_id, action):
-<<<<<<< HEAD
     back = _safe_next(request.form.get("next")) or url_for("admin_dashboard")
     if action not in ("suspend", "activate"):
         return redirect(back)
@@ -582,14 +464,6 @@ def admin_user_action(user_id, action):
         "success" if ok else "danger",
     )
     return redirect(back)
-=======
-    if action not in ("suspend", "activate"):
-        return redirect(url_for("admin_dashboard"))
-    ok, data = api("POST", f"/admin/users/{user_id}/{action}")
-    flash("Account suspended." if ok and action == "suspend" else "Account re-activated." if ok else data,
-          "success" if ok else "danger")
-    return redirect(url_for("admin_dashboard"))
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 if __name__ == "__main__":

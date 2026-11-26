@@ -1,22 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-<<<<<<< HEAD
 from app.core.constants import Approval, Role
-=======
-from app.config import settings
-from app.core.constants import Role, Verification
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 from app.core.security import require_role
 from app.database import get_db
 from app.models.catalog import Product, StockListing
 from app.models.farm import FarmProfile
 from app.models.user import User
 from app.schemas.stock import ListingCreate, ListingOut, ListingUpdate
-<<<<<<< HEAD
 from app.services.notification_service import notify_admins
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 from app.services.stock_service import refresh_status
 
 router = APIRouter(prefix="/stock", tags=["farmer stock"])
@@ -26,11 +18,6 @@ def _my_farm(user: User, db: Session) -> FarmProfile:
     farm = db.query(FarmProfile).filter(FarmProfile.owner_id == user.id).first()
     if not farm:
         raise HTTPException(400, "Create your farm profile first")
-<<<<<<< HEAD
-=======
-    if settings.require_farm_approval and farm.verification_status != Verification.APPROVED:
-        raise HTTPException(403, "Your farm is waiting for admin approval")
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     return farm
 
 
@@ -46,17 +33,12 @@ def create_listing(data: ListingCreate, user: User = Depends(require_role(Role.F
     farm = _my_farm(user, db)
     if not db.get(Product, data.product_id):
         raise HTTPException(404, "Unknown product")
-<<<<<<< HEAD
     # A farmer may add any number of listings, but each new one waits for admin approval.
     listing = StockListing(farm_id=farm.id, approval_status=Approval.PENDING, **data.model_dump())
     db.add(listing)
     db.flush()
     product = db.get(Product, data.product_id)
     notify_admins(db, "stock", f"New stock to approve: {product.name} from {farm.farm_name} (listing #{listing.id})")
-=======
-    listing = StockListing(farm_id=farm.id, **data.model_dump())
-    db.add(listing)
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     db.commit()
     db.refresh(listing)
     return listing
@@ -85,14 +67,11 @@ def update_listing(
         raise HTTPException(409, "Quantity cannot be lower than what is already reserved or sold")
     for key, value in changes.items():
         setattr(listing, key, value)
-<<<<<<< HEAD
     if listing.approval_status == Approval.REJECTED:
         # Editing a rejected listing sends it back for another review.
         listing.approval_status = Approval.PENDING
         listing.approval_note = None
         notify_admins(db, "stock", f"Stock resubmitted for approval: listing #{listing.id}")
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     refresh_status(listing)
     db.commit()
     db.refresh(listing)

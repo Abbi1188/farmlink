@@ -1,9 +1,10 @@
-"""Upgrade an EXISTING FarmLink database to this version. Safe to run more than once.
+"""Upgrade an EXISTING FarmBridge database to this version. Safe to run more than once.
 
 Run from the project root:   python database/migrate_v2.py
 
 What it does
   * creates the new tables (otp_codes, order_events)
+  * adds users.cnic (farmers give their CNIC at sign-up) with a unique index
   * adds approval_status and approval_note to stock_listings; stock that already exists stays visible (approved)
   * marks every existing farm as approved (farms no longer wait for admin approval)
   * creates the built-in admin account if there is none
@@ -42,6 +43,10 @@ def main() -> None:
 
     add_column("stock_listings", "approval_status", "VARCHAR(20) NOT NULL DEFAULT 'approved'")
     add_column("stock_listings", "approval_note", "VARCHAR(255)")
+    add_column("users", "cnic", "VARCHAR(15)")
+    with engine.begin() as conn:
+        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_cnic ON users (cnic)"))
+    print("  users.cnic: unique index ready")
 
     with engine.begin() as conn:
         n = conn.execute(text("UPDATE farm_profiles SET verification_status = 'approved' WHERE verification_status <> 'approved'")).rowcount

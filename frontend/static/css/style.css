@@ -102,7 +102,6 @@ table.data { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 table.data th, table.data td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
 table.data th { background: #eef2eb; color: var(--muted); font-weight: 600; }
 table.data tr:last-child td { border-bottom: none; }
-<<<<<<< HEAD
 
 /* ---------- Status tags ---------- */
 .tag.warn { background: #fff4d6; color: #8a5a00; }
@@ -210,5 +209,27 @@ a.card.stat:hover { border-color: var(--green); }
 .timeline { padding-left: 20px; }
 .timeline li { margin-bottom: 6px; }
 .table-wrap form.inline input { width: 120px; }
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
+
+/* ---------- Welcome screen (splash) ---------- */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 20px 20px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(160deg, var(--green-dark), var(--green));
+  transition: opacity 0.5s ease;
+}
+.splash[hidden] { display: none; }
+.splash.splash-out { opacity: 0; }
+.splash-body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; max-width: 620px; }
+.splash-welcome { margin: 0; font-size: 1.3rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.9; }
+.splash-title { margin: 8px 0 16px; font-size: clamp(2.4rem, 9vw, 4.2rem); line-height: 1.1; }
+.splash-desc { margin: 0; font-size: 1.1rem; line-height: 1.6; opacity: 0.95; }
+.splash-footer { font-size: 0.85rem; opacity: 0.9; }
+.splash-footer p { margin: 2px 0; }

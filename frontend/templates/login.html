@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-<<<<<<< HEAD
 {% set label = ROLE_LABELS.get(role, 'User') %}
 {% block title %}{{ label }} login · FarmLink{% endblock %}
 {% block content %}
@@ -14,15 +13,5 @@
     <p class="muted">New here? <a href="{{ url_for('register', role=role) }}">Register as {{ label }}</a></p>
   {% endif %}
   <p class="muted"><a href="{{ url_for('welcome') }}">Choose a different login</a></p>
-=======
-{% block title %}Log in · FarmLink{% endblock %}
-{% block content %}
-<form class="card narrow" method="post">
-  <h1>Log in</h1>
-  <label>Phone number <input name="phone" required placeholder="03xx xxxxxxx"></label>
-  <label>Password <input type="password" name="password" required></label>
-  <button class="btn" type="submit">Log in</button>
-  <p class="muted">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 </form>
 {% endblock %}

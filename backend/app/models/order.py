@@ -32,12 +32,9 @@ class Order(Base):
     placed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
 
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
-<<<<<<< HEAD
     events = relationship(
         "OrderEvent", back_populates="order", cascade="all, delete-orphan", order_by="OrderEvent.id"
     )
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     farm = relationship("FarmProfile")
     buyer = relationship("User")
 
@@ -54,7 +51,6 @@ class OrderItem(Base):
 
     order = relationship("Order", back_populates="items")
     listing = relationship("StockListing")
-<<<<<<< HEAD
 
 
 class OrderEvent(Base):
@@ -68,5 +64,3 @@ class OrderEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     order = relationship("Order", back_populates="events")
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224

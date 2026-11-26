@@ -1,14 +1,10 @@
 {% extends "base.html" %}
-<<<<<<< HEAD
 {% from "_admin_macros.html" import review_buttons %}
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 {% block title %}Admin · FarmLink{% endblock %}
 {% block content %}
 <h1>Admin dashboard</h1>
 
 <div class="row stats">
-<<<<<<< HEAD
   <a class="card stat" href="#pending"><strong>{{ stats.get('pending_stock', 0) }}</strong><span class="muted">Stock waiting for approval</span></a>
   <a class="card stat" href="{{ url_for('admin_farmers') }}"><strong>{{ stats.get('farmers', 0) }}</strong><span class="muted">Farmers</span></a>
   <a class="card stat" href="{{ url_for('admin_buyers') }}"><strong>{{ stats.get('buyers', 0) }}</strong><span class="muted">Buyers</span></a>
@@ -37,90 +33,4 @@
 {% else %}
   <p class="muted">No stock is waiting for approval.</p>
 {% endfor %}
-=======
-  <div class="card stat"><strong>{{ pending|length }}</strong><span class="muted">Pending approvals</span></div>
-  <div class="card stat"><strong>{{ farmers|length }}</strong><span class="muted">Suppliers (farmers)</span></div>
-  <div class="card stat"><strong>{{ buyers|length }}</strong><span class="muted">Buyers</span></div>
-</div>
-
-{% macro account_action(u) %}
-  {% if u.is_active %}
-    <form class="inline" method="post" action="{{ url_for('admin_user_action', user_id=u.id, action='suspend') }}"
-          onsubmit="return confirm('Suspend this account?');">
-      <button class="btn small secondary" type="submit">Suspend</button>
-    </form>
-  {% else %}
-    <form class="inline" method="post" action="{{ url_for('admin_user_action', user_id=u.id, action='activate') }}">
-      <button class="btn small" type="submit">Re-activate</button>
-    </form>
-  {% endif %}
-{% endmacro %}
-
-<h2 id="pending">Pending approvals</h2>
-{% for f in pending %}
-  <article class="card">
-    <h3>{{ f.farm_name }} <span class="tag">pending</span></h3>
-    <p class="muted">Owner: {{ f.owner_name }} · {{ f.owner_phone }}</p>
-    <p>{{ f.address_text }}, {{ f.city }}, {{ f.district }}, {{ f.province }}</p>
-    {% if f.description %}<p>{{ f.description }}</p>{% endif %}
-    <p class="muted">
-      {% if f.pickup_enabled %}Pickup{% if f.pickup_hours %} ({{ f.pickup_hours }}){% endif %}{% endif %}
-      {% if f.pickup_enabled and f.delivery_enabled %} · {% endif %}
-      {% if f.delivery_enabled %}Delivery within {{ '%g'|format(f.delivery_radius_km) }} km, fee Rs {{ '%g'|format(f.delivery_fee) }}{% endif %}
-    </p>
-    <div class="actions">
-      <form class="inline" method="post" action="{{ url_for('admin_farm_action', farm_id=f.id, action='approve') }}">
-        <button class="btn small" type="submit">Approve</button>
-      </form>
-      <form class="inline" method="post" action="{{ url_for('admin_farm_action', farm_id=f.id, action='reject') }}">
-        <button class="btn small secondary" type="submit">Reject</button>
-      </form>
-    </div>
-  </article>
-{% else %}
-  <p class="muted">No farms are waiting for approval.</p>
-{% endfor %}
-
-<h2 id="suppliers">Suppliers (farmers)</h2>
-<div class="table-wrap">
-  <table class="data">
-    <thead><tr><th>Name</th><th>Phone</th><th>Farm</th><th>Farm status</th><th>Account</th><th>Joined</th><th></th></tr></thead>
-    <tbody>
-    {% for u in farmers %}
-      <tr>
-        <td>{{ u.name }}</td>
-        <td>{{ u.phone }}</td>
-        <td>{{ u.farm_name or '—' }}</td>
-        <td>{% if u.farm_status %}<span class="tag {{ 'ok' if u.farm_status == 'approved' }}">{{ u.farm_status }}</span>{% else %}<span class="muted">no farm yet</span>{% endif %}</td>
-        <td>{{ 'Active' if u.is_active else 'Suspended' }}</td>
-        <td>{{ u.created_at[:10] }}</td>
-        <td>{{ account_action(u) }}</td>
-      </tr>
-    {% else %}
-      <tr><td colspan="7" class="muted">No farmers have signed up yet.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<h2 id="buyers">Buyers</h2>
-<div class="table-wrap">
-  <table class="data">
-    <thead><tr><th>Name</th><th>Phone</th><th>Account</th><th>Joined</th><th></th></tr></thead>
-    <tbody>
-    {% for u in buyers %}
-      <tr>
-        <td>{{ u.name }}</td>
-        <td>{{ u.phone }}</td>
-        <td>{{ 'Active' if u.is_active else 'Suspended' }}</td>
-        <td>{{ u.created_at[:10] }}</td>
-        <td>{{ account_action(u) }}</td>
-      </tr>
-    {% else %}
-      <tr><td colspan="5" class="muted">No buyers have signed up yet.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 {% endblock %}

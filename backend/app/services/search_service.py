@@ -1,7 +1,6 @@
 """Search by product, text and location (near me, radius, city, district, region of origin)."""
 from datetime import date
 
-<<<<<<< HEAD
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, contains_eager
 
@@ -11,15 +10,6 @@ from app.models.catalog import Product, StockListing
 from app.models.farm import FarmProfile
 from app.models.order import Order, OrderItem
 from app.models.user import User
-=======
-from sqlalchemy import or_
-from sqlalchemy.orm import Session, contains_eager
-
-from app.core.constants import ListingStatus, Verification
-from app.core.geo import haversine_km
-from app.models.catalog import Product, StockListing
-from app.models.farm import FarmProfile
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 def to_public(listing: StockListing, lat: float | None, lon: float | None) -> dict:
@@ -52,12 +42,9 @@ def to_public(listing: StockListing, lat: float | None, lon: float | None) -> di
         "harvest_date": listing.harvest_date,
         "city": listing.city,
         "district": listing.district,
-<<<<<<< HEAD
         "address_text": listing.address_text,
         "latitude": listing.latitude,
         "longitude": listing.longitude,
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
         "origin_tag": listing.origin_tag,
         "distance_km": distance,
         "fulfilment_label": label,
@@ -74,13 +61,9 @@ def _visible_listings(db: Session):
         .options(contains_eager(StockListing.product), contains_eager(StockListing.farm))
         .filter(
             StockListing.status == ListingStatus.ACTIVE,
-<<<<<<< HEAD
             StockListing.approval_status == Approval.APPROVED,  # admin must approve every new stock
             FarmProfile.verification_status == Verification.APPROVED,
             FarmProfile.owner.has(User.is_active.is_(True)),  # suspended farmers disappear
-=======
-            FarmProfile.verification_status == Verification.APPROVED,
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
             (StockListing.total_qty - StockListing.reserved_qty - StockListing.sold_qty) > 0,
             or_(StockListing.expiry_date.is_(None), StockListing.expiry_date >= date.today()),
         )
@@ -130,7 +113,6 @@ def search_listings(
 def get_listing(db: Session, listing_id: int, lat: float | None = None, lon: float | None = None) -> dict | None:
     listing = _visible_listings(db).filter(StockListing.id == listing_id).first()
     return to_public(listing, lat, lon) if listing else None
-<<<<<<< HEAD
 
 
 def recent_listings(db: Session, *, lat: float | None = None, lon: float | None = None, limit: int = 8) -> list[dict]:
@@ -151,5 +133,3 @@ def popular_listings(db: Session, *, lat: float | None = None, lon: float | None
     rows = _visible_listings(db).all()
     rows.sort(key=lambda row: (-counts.get(row.id, 0), -row.id))
     return [to_public(row, lat, lon) for row in rows[:limit]]
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224

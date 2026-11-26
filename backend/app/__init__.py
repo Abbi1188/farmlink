@@ -1,1 +1,1 @@
-"""FarmLink backend package."""
+"""FarmBridge backend package."""

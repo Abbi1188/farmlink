@@ -16,5 +16,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(20), default=Role.BUYER)
     language: Mapped[str] = mapped_column(String(10), default="en")
+    # National ID card number, collected from farmers at sign-up (format 12345-1234567-1). Buyers leave it empty.
+    cnic: Mapped[str | None] = mapped_column(String(15), unique=True, index=True, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

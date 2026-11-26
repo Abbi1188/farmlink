@@ -71,11 +71,8 @@ class ListingOut(BaseModel):
     longitude: float
     origin_tag: str | None
     status: str
-<<<<<<< HEAD
     approval_status: str
     approval_note: str | None
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 
 class ListingPublic(BaseModel):
@@ -92,12 +89,9 @@ class ListingPublic(BaseModel):
     harvest_date: date | None
     city: str
     district: str
-<<<<<<< HEAD
     address_text: str  # where the stock can be collected (pickup)
     latitude: float  # used for the "View on map" button
     longitude: float
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     origin_tag: str | None
     distance_km: float | None
     fulfilment_label: str

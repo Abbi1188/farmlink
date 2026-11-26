@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-<<<<<<< HEAD
 {% from "_location_picker.html" import location_picker %}
 {% block title %}My stock · FarmLink{% endblock %}
 {% block head_extra %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
@@ -7,22 +6,11 @@
 {% block content %}
 <h1>{{ farm.farm_name }}</h1>
 <p class="muted"><a href="{{ url_for('farm_profile') }}">Edit farm profile</a> · You can add as many stocks as you like.</p>
-=======
-{% block title %}My stock · FarmLink{% endblock %}
-{% block content %}
-<h1>{{ farm.farm_name }}</h1>
-<p class="muted">
-  Status: <strong>{{ farm.verification_status }}</strong>
-  {% if farm.verification_status != 'approved' %}· You can publish stock after an admin approves your farm.{% endif %}
-  · <a href="{{ url_for('farm_profile') }}">Edit farm profile</a>
-</p>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 <h2>My stock</h2>
 {% for l in listings %}
   <article class="card result">
     <div>
-<<<<<<< HEAD
       <h3>{{ l.product_name }}
         <span class="tag {{ 'ok' if l.approval_status == 'approved' else ('warn' if l.approval_status == 'pending' else 'bad') }}">
           {{ 'Waiting for admin approval' if l.approval_status == 'pending' else ('Approved' if l.approval_status == 'approved' else 'Not approved') }}
@@ -38,12 +26,6 @@
         · Rs {{ '%g'|format(l.price_per_unit) }}/{{ l.unit }}{% if l.origin_tag %} · {{ l.origin_tag }}{% endif %}</p>
       <p class="muted">Pickup point: {{ l.address_text }}, {{ l.city }} ·
         <a href="{{ l.latitude|maps_url(l.longitude) }}" target="_blank" rel="noopener">View on map</a></p>
-=======
-      <h3>{{ l.product_name }} <span class="tag">{{ l.status }}</span></h3>
-      <p class="muted">{{ '%g'|format(l.available_qty) }} {{ l.unit }} available
-        (total {{ '%g'|format(l.total_qty) }}, reserved {{ '%g'|format(l.reserved_qty) }}, sold {{ '%g'|format(l.sold_qty) }})
-        · Rs {{ '%g'|format(l.price_per_unit) }}/{{ l.unit }} · {{ l.city }}{% if l.origin_tag %} · {{ l.origin_tag }}{% endif %}</p>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
     </div>
     <form class="inline" method="post" action="{{ url_for('farmer_update_stock', listing_id=l.id) }}">
       <input type="number" step="any" name="total_qty" placeholder="New total qty">
@@ -61,12 +43,8 @@
   <p class="muted">No stock yet. Add your first product below.</p>
 {% endfor %}
 
-<<<<<<< HEAD
 <h2>Add new stock</h2>
 <p class="muted">Every new stock is checked by the admin first. Buyers can see it once it is approved.</p>
-=======
-<h2>Add stock</h2>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 <form class="card" method="post" action="{{ url_for('farmer_add_stock') }}">
   <div class="row">
     <label>Product
@@ -86,26 +64,10 @@
     <label>Region of origin (optional) <input name="origin_tag" placeholder="Swat"></label>
     <label class="check"><input type="checkbox" name="is_organic"> Organic (my own declaration)</label>
   </div>
-<<<<<<< HEAD
 
   <h3>Where is this stock? (buyers use this for pickup)</h3>
   {{ location_picker(address=farm.address_text, lat=farm.latitude, lon=farm.longitude, with_parts=true,
                      city=farm.city, district=farm.district, province=farm.province) }}
   <button class="btn" type="submit">Send stock for approval</button>
-=======
-  <h3>Where is this stock?</h3>
-  <label>Address <input name="address_text" required value="{{ farm.address_text }}"></label>
-  <div class="row">
-    <label>City <input name="city" required value="{{ farm.city }}"></label>
-    <label>District <input name="district" required value="{{ farm.district }}"></label>
-    <label>Province <input name="province" required value="{{ farm.province }}"></label>
-  </div>
-  <div class="row">
-    <label>Latitude <input name="latitude" id="latitude" required value="{{ farm.latitude }}"></label>
-    <label>Longitude <input name="longitude" id="longitude" required value="{{ farm.longitude }}"></label>
-    <button type="button" class="btn secondary" data-fill-location="latitude,longitude">Use my location</button>
-  </div>
-  <button class="btn" type="submit">Publish stock</button>
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 </form>
 {% endblock %}

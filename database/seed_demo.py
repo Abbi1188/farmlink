@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 """Add a demo farmer, a demo buyer and approved stock so you can try the app straight away.
-=======
-"""Add demo users and stock so you can try the app straight away.
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 
 Run after init_db.py:  python database/seed_demo.py
 DEVELOPMENT ONLY: these accounts use well-known passwords. Never run this on a live server.
@@ -14,11 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
 
 from app import models  # noqa: E402,F401
-<<<<<<< HEAD
 from app.core.constants import Approval, Role, Verification  # noqa: E402
-=======
-from app.core.constants import Role, Verification  # noqa: E402
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
 from app.core.security import hash_password  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
 from app.models.catalog import Product, StockListing  # noqa: E402
@@ -26,10 +18,10 @@ from app.models.farm import FarmProfile  # noqa: E402
 from app.models.user import User  # noqa: E402
 
 
-def get_or_create_user(db, name, phone, password, role):
+def get_or_create_user(db, name, phone, password, role, cnic=None):
     user = db.query(User).filter_by(phone=phone).first()
     if not user:
-        user = User(name=name, phone=phone, password_hash=hash_password(password), role=role)
+        user = User(name=name, phone=phone, password_hash=hash_password(password), role=role, cnic=cnic)
         db.add(user)
         db.flush()
     return user
@@ -38,13 +30,9 @@ def get_or_create_user(db, name, phone, password, role):
 def main() -> None:
     db = SessionLocal()
     try:
-<<<<<<< HEAD
         # The admin account is created by init_db.py / the backend itself (see ADMIN_PHONE in backend/.env).
-=======
-        get_or_create_user(db, "Admin", "03000000000", "admin123", Role.ADMIN)
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
         get_or_create_user(db, "Demo Buyer", "03001234567", "buyer123", Role.BUYER)
-        farmer = get_or_create_user(db, "Demo Farmer", "03007654321", "farmer123", Role.FARMER)
+        farmer = get_or_create_user(db, "Demo Farmer", "03007654321", "farmer123", Role.FARMER, cnic="17301-1234567-1")
 
         farm = db.query(FarmProfile).filter_by(owner_id=farmer.id).first()
         if not farm:
@@ -88,10 +76,7 @@ def main() -> None:
                         unit=unit,
                         price_per_unit=price,
                         is_organic=True,
-<<<<<<< HEAD
                         approval_status=Approval.APPROVED,
-=======
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
                         harvest_date=today,
                         expiry_date=today + timedelta(days=shelf_days),
                         address_text=farm.address_text,
@@ -105,11 +90,7 @@ def main() -> None:
                 )
         db.commit()
         print("Demo data added.")
-<<<<<<< HEAD
         print("  Admin : created by init_db.py (default 03000000000 / admin123)")
-=======
-        print("  Admin : 03000000000 / admin123")
->>>>>>> d0ed8458cf1ece2668168d587a4573d01ca60224
         print("  Farmer: 03007654321 / farmer123")
         print("  Buyer : 03001234567 / buyer123")
     finally:
