@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, photo, photo_strip %}
+{% set active_tab = 'listings' %}
+{% block title %}My listings · FarmBridge{% endblock %}
+{% block header %}<div class="appbar"><h1>My listings</h1><a class="btn small" href="{{ url_for('farmer_add_form') }}">{{ icon('add', 16) }} Add</a></div>{% endblock %}
+{% block content %}
+<p class="muted small-text">You can add as many stocks as you like. Every new stock is checked by the admin first.</p>
+<div class="grid">
+{% for l in listings %}
+  <article class="card">
+    <div style="display:flex;gap:12px;align-items:center">
+      {{ photo(l.product_name, '', l.photos[0] if l.photos else '') }}
+      <div class="stack" style="gap:4px;flex:1;min-width:0">
+        <h3>{{ l.product_name }}</h3>
+        <span class="tag {{ 'ok' if l.approval_status == 'approved' else ('warn' if l.approval_status == 'pending' else 'bad') }}" style="align-self:flex-start">
+          {{ 'Waiting for approval' if l.approval_status == 'pending' else ('Approved' if l.approval_status == 'approved' else 'Not approved') }}
+        </span>
+        {% if l.approval_status == 'approved' %}<span class="tag" style="align-self:flex-start">{{ l.status.replace('_', ' ') }}</span>{% endif %}
+      </div>
+    </div>
+    {% if l.approval_status == 'rejected' %}
+      <p class="rejected-note">The admin did not approve this stock{% if l.approval_note %}: {{ l.approval_note }}{% endif %}. Change something (quantity, price) and save to send it again.</p>
+    {% endif %}
+    <div class="kv"><span>Available</span><strong>{{ '%g'|format(l.available_qty) }} {{ l.unit }}</strong></div>
+    <div class="kv"><span>Price</span><strong>Rs {{ '%g'|format(l.price_per_unit) }} / {{ l.unit }}</strong></div>
+    <p class="small-text muted">Total {{ '%g'|format(l.total_qty) }} · reserved {{ '%g'|format(l.reserved_qty) }} · sold {{ '%g'|format(l.sold_qty) }}{% if l.origin_tag %} · {{ l.origin_tag }}{% endif %}</p>
+    <p class="small-text muted">Pickup point: {{ l.address_text }}, {{ l.city }} · <a href="{{ l.latitude|maps_url(l.longitude) }}" target="_blank" rel="noopener">View on map</a></p>
+    {{ photo_strip(l.photos) }}
+    {% if l.photos|length < 3 %}
+    <form class="inline" method="post" enctype="multipart/form-data" action="{{ url_for('farmer_add_photos', listing_id=l.id) }}">
+      <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required aria-label="Choose photos to add">
+      <button class="btn small secondary" type="submit">Add photos ({{ 3 - l.photos|length }} left)</button>
+    </form>
+    {% endif %}
+    <form class="inline" method="post" action="{{ url_for('farmer_update_stock', listing_id=l.id) }}">
+      <input type="number" step="any" name="total_qty" placeholder="New total qty" aria-label="New total quantity">
+      <input type="number" step="any" name="price_per_unit" placeholder="New price" aria-label="New price">
+      <select name="status" aria-label="Status">
+        <option value="">Keep status</option>
+        <option value="active">Active</option>
+        <option value="paused">Paused</option>
+        <option value="sold_out">Sold out</option>
+      </select>
+      <button class="btn small" type="submit">Update</button>
+    </form>
+  </article>
+{% else %}
+  <div class="empty">
+    <div class="illus">{{ icon('listings', 48) }}</div>
+    <h2>No listings yet</h2>
+    <p>Add your first product so buyers can find it.</p>
+    <a class="btn" href="{{ url_for('farmer_add_form') }}">Add new listing</a>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

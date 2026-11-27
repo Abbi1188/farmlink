@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block screen_class %}narrow{% endblock %}
+{% from "_location_picker.html" import location_picker %}
+{% from "_ui.html" import icon, topbar %}
+{% set active_tab = 'listings' %}
+{% block title %}Add listing · FarmBridge{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">{% endblock %}
+{% block scripts_extra %}<script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>{% endblock %}
+{% block header %}{{ topbar('Add new listing', url_for('farmer_listings')) }}{% endblock %}
+{% block content %}
+<p class="muted small-text">Every new stock is checked by the admin first. Buyers can see it once it is approved.</p>
+<form class="stack" method="post" action="{{ url_for('farmer_add_stock') }}" enctype="multipart/form-data" style="gap:0">
+  <label>Product
+    <select name="product_id" required>
+      {% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <div class="row">
+    <label>Price per unit (Rs) <input type="number" step="any" min="0" name="price_per_unit" required placeholder="2400"></label>
+    <label>Unit
+      <select name="unit"><option>kg</option><option>litre</option><option>dozen</option><option>piece</option></select>
+    </label>
+  </div>
+  <label>Available quantity <input type="number" step="any" min="0" name="total_qty" required placeholder="18"></label>
+  <div class="row">
+    <label>Harvest / production date <input type="date" name="harvest_date"></label>
+    <label>Best before <input type="date" name="expiry_date"></label>
+  </div>
+  <label>Region of origin (optional) <input name="origin_tag" placeholder="Swat"></label>
+  <label class="check"><input type="checkbox" name="is_organic"> Organic (my own declaration)</label>
+
+  <h2 style="margin:6px 0 10px">Photos of your stock <span class="small-text muted" style="font-weight:400">3 photos needed</span></h2>
+  <div class="photo-slots" data-photo-slots>
+    {% for n in (1, 2, 3) %}
+    <label class="photo-slot">
+      <input class="file-hidden" type="file" name="photos" accept="image/jpeg,image/png,image/webp" required aria-label="Upload photo {{ n }}">
+      <span class="empty">{{ icon('image', 24) }}<span>Upload photo {{ n }}</span></span>
+      <img alt="Preview of photo {{ n }}" hidden>
+      <span class="change" hidden>Change</span>
+    </label>
+    {% endfor %}
+  </div>
+  <p class="small-text muted" style="margin:0 0 14px">Use clear pictures of the real stock (JPG, PNG or WebP). Buyers see these photos next to your stock. Large phone photos are made smaller automatically.</p>
+
+  <h2 style="margin:6px 0 10px">Where is this stock? <span class="small-text muted" style="font-weight:400">Buyers use this for pickup</span></h2>
+  {{ location_picker(address=farm.address_text, lat=farm.latitude, lon=farm.longitude, with_parts=true,
+                     city=farm.city, district=farm.district, province=farm.province) }}
+  <button class="btn" type="submit">Send stock for approval</button>
+</form>
+{% endblock %}

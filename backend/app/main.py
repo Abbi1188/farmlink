@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app import models  # noqa: F401  (registers all tables)
 from app.config import settings
@@ -10,6 +11,7 @@ from app.database import Base, SessionLocal, engine
 from app.routers import admin, auth, catalog, farms, notifications, orders, reviews, search, stock
 from app.services.bootstrap import ensure_default_admin
 from app.services.order_service import expire_stale_orders
+from app.services.photo_service import stock_dir
 
 
 def _run_expiry() -> None:
@@ -49,6 +51,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+stock_dir()  # makes sure backend/uploads/stock exists before it is served
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 for module in (auth, farms, catalog, stock, search, orders, reviews, notifications, admin):
     app.include_router(module.router)

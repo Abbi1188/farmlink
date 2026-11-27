@@ -1,82 +1,146 @@
 {% extends "base.html" %}
+{% from "_ui.html" import icon, category_icon %}
+{% set active_tab = 'home' %}
+{% block header %}
+<div class="appbar">
+  <button type="button" class="address-card" id="use-location" aria-label="Set your location">
+    <span class="pin">{{ icon('pin', 20) }}</span>
+    <span class="where"><small>Deliver to</small>
+      <strong id="where-text">{% if form.get('city') %}{{ form.get('city') }}{% elif form.get('lat') %}Your current location{% else %}Tap to set your location{% endif %}</strong>
+    </span>
+    <span class="change">Change</span>
+  </button>
+</div>
+{% endblock %}
 {% block content %}
-{% if show_welcome %}{% include "_splash.html" %}{% include "_welcome_modal.html" %}{% endif %}
+{% if show_welcome %}{% include "_welcome_modal.html" %}{% endif %}
 
-<form class="search-hero" method="get" action="{{ url_for('index') }}">
-  <h1>Fresh from the farm, near you</h1>
+{% if not searched %}
+<section class="home-hero" aria-label="Welcome">
+  <span class="eyebrow">Bridging farmers and families</span>
+  <h1>Fresh from the farm,<br>straight to your table</h1>
+  <p>Find stock near you and choose delivery or pickup.</p>
+  <ul class="perks">
+    <li>{{ icon('leaf', 14) }} Farm fresh</li>
+    <li>{{ icon('truck', 14) }} Delivery or pickup</li>
+    <li>{{ icon('shield', 14) }} Verified farms</li>
+  </ul>
+  <a class="hero-cta" href="#search-form">Start shopping</a>
+</section>
+{% endif %}
 
-  {# The search bar comes first; everything else lives in the Filters panel. #}
+<form method="get" action="{{ url_for('index') }}" id="search-form" class="stack">
   <div class="searchbar">
-    <input type="search" name="q" value="{{ form.get('q', '') }}" placeholder="Search stock by name: wheat, milk, desi ghee, honey" aria-label="Search stock by name" autofocus>
-    <button type="submit" class="btn">Search</button>
+    {{ icon('search', 20) }}
+    <input type="search" name="q" value="{{ form.get('q', '') }}" placeholder="Search fresh products…" aria-label="Search stock by name">
+    <button type="submit">Search</button>
   </div>
+  {% if form.get('cat') %}<input type="hidden" name="cat" value="{{ form.get('cat') }}">{% endif %}
+  <input type="hidden" name="lat" id="lat" value="{{ form.get('lat', '') }}">
+  <input type="hidden" name="lon" id="lon" value="{{ form.get('lon', '') }}">
 
   <details class="filters" {{ 'open' if filters_active }}>
-    <summary class="btn secondary">Filters{% if filters_active %} (on){% endif %}</summary>
+    <summary class="pill {{ 'on' if filters_active }}">{{ icon('filters', 16) }}&nbsp; Filters{% if filters_active %} (on){% endif %}</summary>
     <div class="filters-body card">
       <div class="row">
-        <label>City
-          <input name="city" value="{{ form.get('city', '') }}" placeholder="Peshawar">
-        </label>
-        <label>District
-          <input name="district" value="{{ form.get('district', '') }}">
-        </label>
-        <label>From region (origin)
-          <input name="origin" value="{{ form.get('origin', '') }}" placeholder="Swat">
-        </label>
-        <label>Within
+        <label>City <input name="city" value="{{ form.get('city', '') }}" placeholder="Peshawar"></label>
+        <label>District <input name="district" value="{{ form.get('district', '') }}"></label>
+      </div>
+      <div class="row">
+        <label>From region (origin) <input name="origin" value="{{ form.get('origin', '') }}" placeholder="Swat"></label>
+        <label>Distance
           <select name="radius_km">
             <option value="">Any distance</option>
-            {% for km in (5, 10, 25, 50) %}
-              <option value="{{ km }}" {{ 'selected' if form.get('radius_km') == km|string }}>{{ km }} km</option>
+            {% for km in (5, 10, 15, 20, 25, 50) %}
+              <option value="{{ km }}" {{ 'selected' if form.get('radius_km') == km|string }}>Within {{ km }} km</option>
             {% endfor %}
           </select>
         </label>
       </div>
-      <div class="row">
-        <label class="check"><input type="checkbox" name="organic" {{ 'checked' if form.get('organic') }}> Organic only</label>
-        <label class="check"><input type="checkbox" name="deliverable_only" {{ 'checked' if form.get('deliverable_only') }}> Delivers to me</label>
-        <input type="hidden" name="lat" id="lat" value="{{ form.get('lat', '') }}">
-        <input type="hidden" name="lon" id="lon" value="{{ form.get('lon', '') }}">
-        <button type="button" class="btn secondary" id="use-location">Use my location</button>
-        <a class="btn secondary" href="{{ url_for('index') }}">Clear filters</a>
-      </div>
-      <p class="muted" id="location-status">
-        {% if form.get('lat') %}Location set. Press Search.{% else %}Set your location to see distances and delivery options.{% endif %}
+      <label class="check"><input type="checkbox" name="organic" {{ 'checked' if form.get('organic') }}> Organic only</label>
+      <label class="check"><input type="checkbox" name="deliverable_only" {{ 'checked' if form.get('deliverable_only') }}> Delivers to me</label>
+      <p class="small-text muted" id="location-status">
+        {% if form.get('lat') %}Location set.{% else %}Tap the address at the top to set your location for distances and delivery.{% endif %}
       </p>
+      <div class="btn-row">
+        <a class="btn secondary" href="{{ url_for('index') }}">Reset</a>
+        <button class="btn" type="submit">Show results</button>
+      </div>
     </div>
   </details>
 </form>
 
 {% if searched %}
-  <h2>{{ results|length }} result{{ '' if results|length == 1 else 's' }}</h2>
+  <div class="section-head">
+    <h2>{{ results|length }} result{{ '' if results|length == 1 else 's' }}{% if active_cat %} in {{ active_cat.name }}{% endif %}</h2>
+    <a href="{{ url_for('index') }}">Clear</a>
+  </div>
+  <div class="grid">
   {% for r in results %}
     {% with lat=form.get('lat'), lon=form.get('lon') %}{% include "_listing_card.html" %}{% endwith %}
   {% else %}
-    <p class="muted">No stock matches. Try a different name or fewer filters.</p>
+    <div class="empty">
+      <div class="illus">{{ icon('search', 44) }}</div>
+      <h2>No stock found</h2>
+      <p>Try a different name or fewer filters.</p>
+      <a class="btn" href="{{ url_for('index') }}">Back to home</a>
+    </div>
   {% endfor %}
+  </div>
 {% else %}
   {% if recent_searches %}
-    <section class="home-section">
+    <div class="stack" style="gap:8px">
       <h2>Your recent searches</h2>
-      <p class="chips">
-        {% for term in recent_searches %}
-          <a class="chip" href="{{ url_for('index', q=term) }}">{{ term }}</a>
-        {% endfor %}
-      </p>
-    </section>
+      <div class="chips">
+        {% for term in recent_searches %}<a class="chip" href="{{ url_for('index', q=term) }}">{{ term }}</a>{% endfor %}
+      </div>
+    </div>
   {% endif %}
 
-  <section class="home-section">
-    <h2>Popular stock</h2>
-    {% for r in popular %}{% include "_listing_card.html" %}
-    {% else %}<p class="muted">Nothing here yet. Stock appears once farmers add it and the admin approves it.</p>{% endfor %}
-  </section>
+  {% if categories %}
+    <div class="section-head"><h2>Shop by category</h2></div>
+    <div class="hscroll" style="margin-top:10px">
+      {% for c in categories %}
+        <a class="cat" href="{{ url_for('index', cat=c.id, lat=form.get('lat') or None, lon=form.get('lon') or None) }}"><span class="ico">{{ category_icon(c.name, 18) }}</span>{{ c.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
 
-  <section class="home-section">
-    <h2>Recently added</h2>
-    {% for r in recent %}{% include "_listing_card.html" %}
-    {% else %}<p class="muted">No new stock yet.</p>{% endfor %}
-  </section>
+  {% if farms %}
+    <div class="section-head"><h2>Shop by farm</h2></div>
+    <div class="hscroll farms" style="margin-top:10px">
+      {% for f in farms %}
+        <a class="farm-card" href="{{ url_for('farm_public', farm_id=f.id, lat=form.get('lat') or None, lon=form.get('lon') or None) }}">
+          <span class="cover">{{ f.name[0] }}</span>
+          <span class="info">
+            <strong>{{ f.name }}</strong>
+            <span>{{ f.city }}{% if f.distance_km is not none %} · {{ f.distance_km }} km away{% endif %}</span>
+            <span class="meta"><span class="tag solid">Verified</span><span class="small-text muted">{{ f.count }} listing{{ '' if f.count == 1 else 's' }}</span></span>
+          </span>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if near %}
+    <div class="section-head"><h2>Near you</h2><span class="small-text muted">Closest first</span></div>
+    <div class="grid">{% for r in near %}{% with lat=form.get('lat'), lon=form.get('lon') %}{% include "_listing_card.html" %}{% endwith %}{% endfor %}</div>
+  {% else %}
+    <div class="section-head"><h2>Popular stock</h2></div>
+    <div class="grid">
+    {% for r in popular %}{% include "_listing_card.html" %}
+    {% else %}
+      <div class="empty">
+        <div class="illus">{{ icon('listings', 44) }}</div>
+        <h2>Nothing here yet</h2>
+        <p>Stock appears once farmers add it and the admin approves it.</p>
+      </div>
+    {% endfor %}
+    </div>
+    {% if recent %}
+      <div class="section-head"><h2>Recently added</h2></div>
+      <div class="grid">{% for r in recent %}{% include "_listing_card.html" %}{% endfor %}</div>
+    {% endif %}
+  {% endif %}
 {% endif %}
 {% endblock %}

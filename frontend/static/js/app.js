@@ -1,4 +1,4 @@
-// FarmLink frontend script: welcome pop-up, OTP sign-up, search location, order page, location picker.
+// FarmBridge frontend script: welcome pop-up, OTP sign-up, search location, order page, location picker.
 (function () {
   "use strict";
 
@@ -277,26 +277,33 @@
   if (searchButton) {
     searchButton.addEventListener("click", function () {
       var status = document.getElementById("location-status");
-      status.textContent = "Detecting your location…";
+      var where = document.getElementById("where-text");
+      if (status) status.textContent = "Detecting your location…";
+      if (where) where.textContent = "Detecting your location…";
       getPosition()
         .then(function (pos) {
           document.getElementById("lat").value = pos.lat.toFixed(6);
           document.getElementById("lon").value = pos.lon.toFixed(6);
-          status.textContent = "Location set. Press Search.";
+          if (where) where.textContent = "Your current location";
+          var form = document.getElementById("search-form");
+          if (form) form.submit();
         })
         .catch(function (error) {
-          status.textContent = error.message;
+          if (status) status.textContent = error.message;
+          if (where) where.textContent = "Tap to set your location";
         });
     });
   }
 
-  // ---------------------------------------------------------------- order page: pickup or delivery
-  var fulfilment = document.getElementById("fulfilment_type");
+  // ---------------------------------------------------------------- checkout: pickup or delivery
+  var fulfilmentRadios = document.querySelectorAll('input[name="fulfilment_type"]');
   var deliveryFields = document.getElementById("delivery-fields");
   var pickupInfo = document.getElementById("pickup-info");
-  if (fulfilment && deliveryFields) {
+  if (fulfilmentRadios.length && deliveryFields) {
+    var checkoutForm = document.getElementById("checkout-form");
     var toggle = function () {
-      var delivery = fulfilment.value === "delivery";
+      var chosen = document.querySelector('input[name="fulfilment_type"]:checked');
+      var delivery = !!chosen && chosen.value === "delivery";
       deliveryFields.hidden = !delivery;
       if (pickupInfo) pickupInfo.hidden = delivery;
       var addressInput = deliveryFields.querySelector('[data-loc="address"]');
@@ -306,19 +313,38 @@
           if (picker.__loc) picker.__loc.refresh();
         });
       }
+      // update the total
+      if (checkoutForm) {
+        var subtotal = parseFloat(checkoutForm.dataset.subtotal || "0");
+        var fee = delivery ? parseFloat(checkoutForm.dataset.fee || "0") : 0;
+        var feeRow = document.getElementById("fee-row");
+        if (feeRow) feeRow.hidden = !delivery;
+        var money = "Rs " + (subtotal + fee).toLocaleString("en-US", { maximumFractionDigits: 2 });
+        var total = document.getElementById("total-amount");
+        var placeTotal = document.getElementById("place-total");
+        if (total) total.textContent = money;
+        if (placeTotal) placeTotal.textContent = money;
+      }
     };
-    fulfilment.addEventListener("change", toggle);
+    fulfilmentRadios.forEach(function (r) { r.addEventListener("change", toggle); });
     toggle();
+
+    // saved addresses: one tap fills the address and its location
+    document.querySelectorAll("[data-saved-addresses] [data-address]").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        var picker = deliveryFields.querySelector("[data-loc-picker]");
+        if (!picker) return;
+        picker.querySelector('[data-loc="address"]').value = chip.dataset.address;
+        picker.querySelector('[data-loc="lat"]').value = chip.dataset.lat;
+        picker.querySelector('[data-loc="lon"]').value = chip.dataset.lon;
+        if (picker.__loc) picker.__loc.refresh();
+      });
+    });
   }
 
-  // ---------------------------------------------------------------- welcome screen (3 s) then pop-up
-  var splash = document.getElementById("splash");
+  // ---------------------------------------------------------------- welcome pop-up
   var modal = document.getElementById("welcome-modal");
   if (modal) {
-    var openModal = function () {
-      modal.hidden = false;
-      document.body.classList.add("modal-open");
-    };
     var closeModal = function () {
       modal.hidden = true;
       document.body.classList.remove("modal-open");
@@ -336,22 +362,9 @@
       if (event.target === modal) closeModal();
     });
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && !modal.hidden) closeModal();
+      if (event.key === "Escape") closeModal();
     });
-
-    if (splash) {
-      var SPLASH_SECONDS = 3;
-      document.body.classList.add("modal-open"); // no scrolling behind the welcome screen
-      setTimeout(function () {
-        splash.classList.add("splash-out"); // short fade
-        setTimeout(function () {
-          splash.hidden = true;
-          openModal();
-        }, 500);
-      }, SPLASH_SECONDS * 1000);
-    } else {
-      openModal();
-    }
+    document.body.classList.add("modal-open");
   }
 
   // ---------------------------------------------------------------- registration: send OTP
@@ -412,4 +425,316 @@
         });
     });
   }
+})();
+
+
+// ====================================================================== UI behaviour (FarmBridge design)
+(function () {
+  // Show / hide password
+  document.querySelectorAll("[data-toggle-password]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var input = button.parentElement.querySelector("input");
+      var show = input.type === "password";
+      input.type = show ? "text" : "password";
+      button.textContent = show ? "Hide" : "Show";
+    });
+  });
+
+  // Quantity stepper on the product page, and the live total on the button
+  document.querySelectorAll("[data-stepper]").forEach(function (box) {
+    var input = box.querySelector("input");
+    var step = parseFloat(box.dataset.step || "1");
+    var min = parseFloat(box.dataset.min || "1");
+    var max = parseFloat(box.dataset.max || "9999");
+    var form = box.closest("form");
+    var label = form ? form.querySelector("[data-total-label]") : null;
+    var render = function () {
+      var qty = parseFloat(input.value) || min;
+      if (label) {
+        var price = parseFloat(label.dataset.price || "0");
+        label.textContent = "Add to cart · Rs " + (qty * price).toLocaleString("en-US", { maximumFractionDigits: 2 });
+      }
+    };
+    var change = function (delta) {
+      var value = (parseFloat(input.value) || min) + delta;
+      value = Math.min(max, Math.max(min, value));
+      input.value = Math.round(value * 100) / 100;
+      render();
+    };
+    box.querySelector("[data-dec]").addEventListener("click", function () { change(-step); });
+    box.querySelector("[data-inc]").addEventListener("click", function () { change(step); });
+    input.addEventListener("input", render);
+    render();
+  });
+
+  // Loading states: a thin progress bar at the top, a skeleton if a page is slow,
+  // and a spinner on the button so nobody presses it twice.
+  var topload = document.getElementById("topload");
+  var skeleton = document.getElementById("page-skeleton");
+  var slowTimer = null;
+  var startLoading = function (showSkeleton) {
+    if (topload) { topload.classList.add("run"); }
+    if (showSkeleton && skeleton) {
+      slowTimer = setTimeout(function () { skeleton.hidden = false; }, 350);
+    }
+  };
+  window.addEventListener("pageshow", function () {
+    if (topload) topload.classList.remove("run");
+    if (skeleton) skeleton.hidden = true;
+    clearTimeout(slowTimer);
+    document.querySelectorAll(".btn.loading").forEach(function (b) { b.classList.remove("loading"); });
+  });
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest("a[href]");
+    if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    var href = link.getAttribute("href");
+    if (!href || href.charAt(0) === "#" || link.target === "_blank" || href.indexOf("mailto:") === 0 || href.indexOf("tel:") === 0) return;
+    if (link.origin !== window.location.origin) return;
+    startLoading(true);
+  });
+  document.querySelectorAll("form").forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+      if (event.defaultPrevented) return;
+      var button = form.querySelector('button[type="submit"].btn:not(.small), button:not([type]).btn:not(.small)');
+      if (button) button.classList.add("loading");
+      startLoading(form.method.toLowerCase() === "get");
+    });
+  });
+})();
+
+// ====================================================================== Verify screen and CNIC field
+(function () {
+  // CNIC: show it as 12345-1234567-1 while typing
+  var cnic = document.getElementById("reg-cnic");
+  if (cnic) {
+    cnic.addEventListener("input", function () {
+      var d = cnic.value.replace(/\D/g, "").slice(0, 13);
+      var out = d.slice(0, 5);
+      if (d.length > 5) out += "-" + d.slice(5, 12);
+      if (d.length > 12) out += "-" + d.slice(12);
+      cnic.value = out;
+    });
+  }
+
+  // Six separate boxes for the verification code
+  var boxes = Array.prototype.slice.call(document.querySelectorAll(".otp-box"));
+  if (boxes.length) {
+    var hidden = document.getElementById("otp-value");
+    var button = document.getElementById("verify-btn");
+    var sync = function () {
+      var code = boxes.map(function (b) { return b.value; }).join("");
+      hidden.value = code;
+      button.disabled = code.length !== boxes.length;
+      boxes.forEach(function (b) { b.classList.toggle("filled", !!b.value); });
+    };
+    boxes.forEach(function (box, i) {
+      box.addEventListener("input", function () {
+        box.value = box.value.replace(/\D/g, "").slice(-1);
+        if (box.value && boxes[i + 1]) boxes[i + 1].focus();
+        sync();
+      });
+      box.addEventListener("keydown", function (event) {
+        if (event.key === "Backspace" && !box.value && boxes[i - 1]) { boxes[i - 1].focus(); boxes[i - 1].value = ""; sync(); }
+        if (event.key === "ArrowLeft" && boxes[i - 1]) boxes[i - 1].focus();
+        if (event.key === "ArrowRight" && boxes[i + 1]) boxes[i + 1].focus();
+      });
+      box.addEventListener("paste", function (event) {
+        var text = ((event.clipboardData || window.clipboardData).getData("text") || "").replace(/\D/g, "").slice(0, boxes.length);
+        if (!text) return;
+        event.preventDefault();
+        text.split("").forEach(function (ch, k) { boxes[k].value = ch; });
+        (boxes[Math.min(text.length, boxes.length - 1)]).focus();
+        sync();
+      });
+      box.addEventListener("focus", function () { box.select(); });
+    });
+    sync();
+
+    // Resend countdown
+    var note = document.getElementById("resend-note");
+    var counter = document.getElementById("resend-count");
+    var resendForm = document.getElementById("resend-form");
+    var left = parseInt(note.dataset.seconds || "30", 10);
+    var tick = function () {
+      if (left <= 0) { note.hidden = true; resendForm.hidden = false; return; }
+      counter.textContent = "0:" + (left < 10 ? "0" : "") + left;
+      left -= 1;
+      setTimeout(tick, 1000);
+    };
+    tick();
+  }
+})();
+
+
+// Stock photos: preview each picture, shrink big phone photos before upload, and switch pictures on the product page.
+(function () {
+  "use strict";
+  var TYPES = ["image/jpeg", "image/png", "image/webp"];
+  var LIMIT = 5 * 1024 * 1024;   // same limit as the server
+  var MAX_SIDE = 1600;           // longest side after shrinking, in pixels
+
+  // Returns a smaller JPEG when the picture is large; otherwise (or on any problem) the original file.
+  function shrink(file, done) {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+      if (scale === 1 && file.size <= 1024 * 1024) { done(file); return; }
+      var canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.naturalWidth * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";    // PNG see-through areas become white, not black
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function (blob) {
+        if (!blob || blob.size >= file.size) { done(file); return; }
+        done(new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }));
+      }, "image/jpeg", 0.85);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); done(file); };
+    img.src = url;
+  }
+
+  function resetSlot(input) {
+    var slot = input.closest(".photo-slot");
+    if (!slot) return;
+    slot.querySelector("img").hidden = true;
+    slot.querySelector(".empty").hidden = false;
+    slot.querySelector(".change").hidden = true;
+  }
+
+  function showSlot(input, file) {
+    var slot = input.closest(".photo-slot");
+    if (!slot) return;
+    var img = slot.querySelector("img");
+    img.src = URL.createObjectURL(file);
+    img.hidden = false;
+    slot.querySelector(".empty").hidden = true;
+    slot.querySelector(".change").hidden = false;
+  }
+
+  document.querySelectorAll("input[type=file][name=photos]").forEach(function (input) {
+    input.addEventListener("change", function () {
+      var files = Array.prototype.slice.call(input.files || []);
+      if (!files.length) { resetSlot(input); return; }
+      for (var i = 0; i < files.length; i++) {
+        if (TYPES.indexOf(files[i].type) < 0) {
+          alert("Please choose JPG, PNG or WebP pictures.");
+          input.value = ""; resetSlot(input); return;
+        }
+      }
+      var out = [], left = files.length;
+      files.forEach(function (file, index) {
+        shrink(file, function (small) {
+          out[index] = small;
+          left -= 1;
+          if (left) return;
+          if (window.DataTransfer) {   // put the smaller pictures back into the form field
+            try {
+              var transfer = new DataTransfer();
+              out.forEach(function (f) { transfer.items.add(f); });
+              input.files = transfer.files;
+            } catch (e) { /* keep the originals */ }
+          }
+          var current = Array.prototype.slice.call(input.files || []);
+          for (var j = 0; j < current.length; j++) {
+            if (current[j].size > LIMIT) {
+              alert("Each photo must be 5 MB or smaller.");
+              input.value = ""; resetSlot(input); return;
+            }
+          }
+          if (current[0]) showSlot(input, current[0]);
+        });
+      });
+    });
+  });
+
+  // Product page: tap a small picture to show it large
+  document.querySelectorAll("[data-gallery]").forEach(function (gallery) {
+    var main = gallery.querySelector("[data-gallery-main]");
+    var buttons = gallery.querySelectorAll("[data-gallery-thumb]");
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        main.src = button.dataset.src;
+        buttons.forEach(function (b) { b.classList.toggle("active", b === button); });
+      });
+    });
+  });
+})();
+
+// Look and feel: numbers count up, and success messages fade away by themselves.
+(function () {
+  "use strict";
+  var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Dashboard numbers (admin and farmer) count up from 0 to their value
+  if (!calm) {
+    document.querySelectorAll(".stat strong").forEach(function (el) {
+      var target = parseInt(el.textContent, 10);
+      if (!/^\d+$/.test(el.textContent.trim()) || target < 2) return;
+      var start = null;
+      function step(now) {
+        if (start === null) start = now;
+        var t = Math.min(1, (now - start) / 700);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+        if (t < 1) requestAnimationFrame(step);
+      }
+      el.textContent = "0";
+      requestAnimationFrame(step);
+    });
+  }
+
+  // Messages: a close button on all, and success ones leave after 5 seconds. Errors stay until closed.
+  document.querySelectorAll(".flash").forEach(function (flash) {
+    var close = document.createElement("button");
+    close.type = "button"; close.className = "toast-close"; close.setAttribute("aria-label", "Close message"); close.textContent = "×";
+    function leave() { flash.classList.add("leaving"); setTimeout(function () { flash.remove(); }, calm ? 0 : 450); }
+    close.addEventListener("click", leave);
+    flash.appendChild(close);
+    if (flash.classList.contains("success")) setTimeout(leave, 5000);
+  });
+})();
+
+/* ---- Installable app: service worker and install hint ---- */
+(function () {
+  var meta = document.querySelector('meta[name="fb-pwa"]');
+  if (!meta) return; // admin pages have no app
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register(meta.content, { scope: "/" }).catch(function () {});
+    });
+  }
+  var standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+  if (standalone) return;
+  var KEY = "fb-install-dismissed";
+  function dismissed() { try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; } }
+  function remember() { try { localStorage.setItem(KEY, "1"); } catch (e) {} }
+  function bar(text, sub, withButton, onInstall) {
+    if (dismissed() || document.querySelector(".install-bar")) return;
+    var el = document.createElement("div");
+    el.className = "install-bar";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-label", "Install FarmBridge");
+    el.innerHTML = '<img alt="" width="40" height="40"><div class="txt"><strong></strong><span></span></div>' +
+      (withButton ? '<button type="button" class="btn small">Install</button>' : "") +
+      '<button type="button" class="x" aria-label="Close">&times;</button>';
+    el.querySelector("img").src = "/static/img/icon-192.png";
+    el.querySelector("strong").textContent = text;
+    el.querySelector("span").textContent = sub;
+    el.querySelector(".x").addEventListener("click", function () { remember(); el.remove(); });
+    if (withButton) el.querySelector(".btn").addEventListener("click", function () { el.remove(); onInstall(); });
+    document.body.appendChild(el);
+    setTimeout(function () { el.classList.add("show"); }, 2500);
+  }
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    bar("Install FarmBridge", "Open it like an app from your home screen.", true, function () {
+      e.prompt();
+      e.userChoice.then(remember);
+    });
+  });
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  if (ios) bar("Install FarmBridge", "Tap Share, then Add to Home Screen.", false);
 })();

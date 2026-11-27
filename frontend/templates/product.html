@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, photo, topbar %}
+{% set active_tab = 'home' %}
+{% block title %}{{ listing.product_name }} · FarmBridge{% endblock %}
+{% block header %}{{ topbar('Product details', back_url) }}{% endblock %}
+{% block content %}
+<div class="product-layout">
+<div class="media">
+{% if listing.photos %}
+  <div data-gallery>
+    <span class="thumb lg"><img data-gallery-main src="{{ media_url(listing.photos[0]) }}" alt="{{ listing.product_name }}"></span>
+    {% if listing.photos|length > 1 %}
+    <div class="gallery-thumbs">
+      {% for p in listing.photos %}
+      <button type="button" data-gallery-thumb data-src="{{ media_url(p) }}" class="{{ 'active' if loop.first }}" aria-label="Show photo {{ loop.index }}"><img src="{{ media_url(p) }}" alt="" loading="lazy"></button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+{% else %}
+  {{ photo(listing.product_name, 'lg') }}
+{% endif %}
+</div>
+<div class="details stack" style="gap:14px">
+<div class="stack" style="gap:6px">
+  <h1 style="font-size:24px">{{ listing.product_name }}</h1>
+  <div class="detail-price">
+    <span class="big">Rs {{ '%g'|format(listing.price_per_unit) }} / {{ listing.unit }}</span>
+    <span class="chips">
+      {% if listing.is_organic %}<span class="tag">Organic</span>{% endif %}
+      {% if listing.harvest_date %}<span class="tag">Fresh</span>{% endif %}
+    </span>
+  </div>
+  {% if listing.is_organic %}<p class="small-text muted">Organic is declared by the farmer.</p>{% endif %}
+</div>
+
+<a class="farm-row" href="{{ url_for('farm_public', farm_id=listing.farm_id, lat=lat or None, lon=lon or None) }}">
+  <span class="avatar">{{ listing.farm_name[0] }}</span>
+  <span class="info">
+    <strong>{{ listing.farm_name }}</strong>
+    <span>Verified farm · {{ listing.city }}{% if listing.distance_km is not none %} · {{ listing.distance_km }} km away{% endif %}</span>
+    <em>View farm profile</em>
+  </span>
+  {{ icon('next', 20) }}
+</a>
+
+<form method="post" action="{{ url_for('cart_add', listing_id=listing.id) }}" class="stack" id="add-form">
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="kv"><span>Available quantity</span><strong>{{ '%g'|format(listing.available_qty) }} {{ listing.unit }}</strong></div>
+    {% if listing.harvest_date %}<div class="kv"><span>Production date</span><strong>{{ listing.harvest_date }}</strong></div>{% endif %}
+    <div class="kv"><span>Delivery</span><strong>{% if listing.delivery_available %}Available{% elif farm and farm.delivery_enabled %}Check your address{% else %}Not offered{% endif %}</strong></div>
+    <div class="kv"><span>Pickup</span><strong>{{ 'Available' if listing.pickup_available else 'Not offered' }}</strong></div>
+    {% if listing.pickup_available %}
+      <div class="kv"><span>Pickup point</span><strong>{{ listing.address_text }}</strong></div>
+      <a class="small-text" href="{{ listing.latitude|maps_url(listing.longitude) }}" target="_blank" rel="noopener">View on map</a>
+    {% endif %}
+    <hr>
+    <div class="kv">
+      <span>Quantity</span>
+      <span class="stepper" data-stepper data-step="1" data-min="1" data-max="{{ listing.available_qty }}">
+        <button type="button" data-dec aria-label="Less">{{ icon('remove', 18) }}</button>
+        <input type="number" name="qty" value="1" min="1" max="{{ listing.available_qty }}" step="any" aria-label="Quantity">
+        <span class="unit">{{ listing.unit }}</span>
+        <button type="button" data-inc aria-label="More">{{ icon('add', 18) }}</button>
+      </span>
+    </div>
+  </div>
+  <input type="hidden" name="lat" value="{{ lat or '' }}">
+  <input type="hidden" name="lon" value="{{ lon or '' }}">
+  <button class="btn" type="submit" data-price="{{ listing.price_per_unit }}" data-total-label>Add to cart · Rs {{ '%g'|format(listing.price_per_unit) }}</button>
+</form>
+</div>
+</div>
+{% endblock %}

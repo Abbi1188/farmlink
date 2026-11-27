@@ -1,88 +1,101 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from datetime import date
+from typing import Literal
 
-from app.core.constants import Approval, Role
-from app.core.security import require_role
-from app.database import get_db
-from app.models.catalog import Product, StockListing
-from app.models.farm import FarmProfile
-from app.models.user import User
-from app.schemas.stock import ListingCreate, ListingOut, ListingUpdate
-from app.services.notification_service import notify_admins
-from app.services.stock_service import refresh_status
-
-router = APIRouter(prefix="/stock", tags=["farmer stock"])
+from pydantic import BaseModel, ConfigDict, Field
 
 
-def _my_farm(user: User, db: Session) -> FarmProfile:
-    farm = db.query(FarmProfile).filter(FarmProfile.owner_id == user.id).first()
-    if not farm:
-        raise HTTPException(400, "Create your farm profile first")
-    return farm
+class CategoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    parent_id: int | None
 
 
-def _my_listing(listing_id: int, farm: FarmProfile, db: Session) -> StockListing:
-    listing = db.get(StockListing, listing_id)
-    if not listing or listing.farm_id != farm.id:
-        raise HTTPException(404, "Listing not found")
-    return listing
+class ProductOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    category_id: int
+    default_unit: str
 
 
-@router.post("", response_model=ListingOut, status_code=201)
-def create_listing(data: ListingCreate, user: User = Depends(require_role(Role.FARMER)), db: Session = Depends(get_db)):
-    farm = _my_farm(user, db)
-    if not db.get(Product, data.product_id):
-        raise HTTPException(404, "Unknown product")
-    # A farmer may add any number of listings, but each new one waits for admin approval.
-    listing = StockListing(farm_id=farm.id, approval_status=Approval.PENDING, **data.model_dump())
-    db.add(listing)
-    db.flush()
-    product = db.get(Product, data.product_id)
-    notify_admins(db, "stock", f"New stock to approve: {product.name} from {farm.farm_name} (listing #{listing.id})")
-    db.commit()
-    db.refresh(listing)
-    return listing
+class ListingCreate(BaseModel):
+    product_id: int
+    total_qty: float = Field(gt=0)
+    unit: str = Field(min_length=1, max_length=20)
+    price_per_unit: float = Field(gt=0)
+    is_organic: bool = False
+    harvest_date: date | None = None
+    expiry_date: date | None = None
+    address_text: str = Field(min_length=3, max_length=255)
+    city: str
+    district: str
+    province: str
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    origin_tag: str | None = Field(default=None, max_length=80)
 
 
-@router.get("/mine", response_model=list[ListingOut])
-def my_listings(user: User = Depends(require_role(Role.FARMER)), db: Session = Depends(get_db)):
-    farm = db.query(FarmProfile).filter(FarmProfile.owner_id == user.id).first()
-    if not farm:
-        return []
-    return db.query(StockListing).filter(StockListing.farm_id == farm.id).order_by(StockListing.id.desc()).all()
+class ListingUpdate(BaseModel):
+    total_qty: float | None = Field(default=None, gt=0)
+    price_per_unit: float | None = Field(default=None, gt=0)
+    is_organic: bool | None = None
+    expiry_date: date | None = None
+    status: Literal["active", "paused", "sold_out"] | None = None
+    origin_tag: str | None = Field(default=None, max_length=80)
 
 
-@router.patch("/{listing_id}", response_model=ListingOut)
-def update_listing(
-    listing_id: int,
-    data: ListingUpdate,
-    user: User = Depends(require_role(Role.FARMER)),
-    db: Session = Depends(get_db),
-):
-    farm = _my_farm(user, db)
-    listing = _my_listing(listing_id, farm, db)
-    changes = data.model_dump(exclude_unset=True)
-    new_total = changes.get("total_qty", listing.total_qty)
-    if new_total < listing.reserved_qty + listing.sold_qty:
-        raise HTTPException(409, "Quantity cannot be lower than what is already reserved or sold")
-    for key, value in changes.items():
-        setattr(listing, key, value)
-    if listing.approval_status == Approval.REJECTED:
-        # Editing a rejected listing sends it back for another review.
-        listing.approval_status = Approval.PENDING
-        listing.approval_note = None
-        notify_admins(db, "stock", f"Stock resubmitted for approval: listing #{listing.id}")
-    refresh_status(listing)
-    db.commit()
-    db.refresh(listing)
-    return listing
+class ListingOut(BaseModel):
+    """Farmer's own view of a listing (includes exact location)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    product_id: int
+    product_name: str
+    total_qty: float
+    reserved_qty: float
+    sold_qty: float
+    available_qty: float
+    unit: str
+    price_per_unit: float
+    is_organic: bool
+    harvest_date: date | None
+    expiry_date: date | None
+    address_text: str
+    city: str
+    district: str
+    latitude: float
+    longitude: float
+    origin_tag: str | None
+    status: str
+    approval_status: str
+    approval_note: str | None
+    photos: list[str] = []  # paths such as /uploads/stock/<name>.jpg
 
 
-@router.delete("/{listing_id}", status_code=204)
-def delete_listing(listing_id: int, user: User = Depends(require_role(Role.FARMER)), db: Session = Depends(get_db)):
-    farm = _my_farm(user, db)
-    listing = _my_listing(listing_id, farm, db)
-    if listing.reserved_qty > 0 or listing.sold_qty > 0:
-        raise HTTPException(409, "This listing has orders. Pause it instead of deleting.")
-    db.delete(listing)
-    db.commit()
+class ListingPublic(BaseModel):
+    """Buyer's view in search results: distance and fulfilment label, no exact address."""
+
+    id: int
+    product_name: str
+    farm_id: int
+    farm_name: str
+    available_qty: float
+    unit: str
+    price_per_unit: float
+    is_organic: bool
+    harvest_date: date | None
+    city: str
+    district: str
+    address_text: str  # where the stock can be collected (pickup)
+    latitude: float  # used for the "View on map" button
+    longitude: float
+    origin_tag: str | None
+    distance_km: float | None
+    fulfilment_label: str
+    delivery_available: bool
+    pickup_available: bool
+    photos: list[str] = []

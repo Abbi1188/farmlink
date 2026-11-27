@@ -1,6 +1,10 @@
 {% extends "base.html" %}
+{% set active_tab = 'farmers' %}
+{% block app_class %}wide{% endblock %}
+{% block nav %}{% endblock %}
 {% from "_admin_macros.html" import account_action, review_buttons, approval_tag %}
-{% block title %}Farmers · FarmLink{% endblock %}
+{% from "_ui.html" import photo_strip %}
+{% block title %}Farmers · FarmBridge{% endblock %}
 {% block content %}
 <h1>Farmers</h1>
 <p class="muted">{{ farmers|length }} registered. Click a farmer to see all of their stock.</p>
@@ -29,7 +33,8 @@
             {% for s in f.stocks %}
               <tr>
                 <td>{{ s.product_name }}{% if s.is_organic %} <span class="badge">Organic</span>{% endif %}
-                  {% if s.approval_status == 'approved' %}<br><span class="muted">{{ s.status.replace('_', ' ') }}</span>{% endif %}</td>
+                  {% if s.approval_status == 'approved' %}<br><span class="muted">{{ s.status.replace('_', ' ') }}</span>{% endif %}
+                  {% if s.photos %}<br>{{ photo_strip(s.photos) }}{% endif %}</td>
                 <td>{{ '%g'|format(s.available_qty) }} / {{ '%g'|format(s.total_qty) }} {{ s.unit }}</td>
                 <td>Rs {{ '%g'|format(s.price_per_unit) }}/{{ s.unit }}</td>
                 <td>{{ s.address_text }}, {{ s.city }}<br>

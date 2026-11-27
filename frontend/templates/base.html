@@ -1,47 +1,127 @@
+{% from "_ui.html" import icon, topstrip %}
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}FarmLink{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#245B3C">
+  <title>{% block title %}FarmBridge{% endblock %}</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='img/favicon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon-32.png') }}">
+  {% if not (current_user and current_user.role == 'admin') and not request.path.startswith('/admin') %}
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FarmBridge">
+  <meta name="fb-pwa" content="{{ url_for('service_worker') }}">
+  {% endif %}
+  <link rel="stylesheet" href="{{ asset('css/style.css') }}">
   {% block head_extra %}{% endblock %}
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="{{ url_for('index') }}">FarmLink</a>
-    <nav>
-      {% if current_user %}
-        {% if current_user.role == 'admin' %}
-          <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('admin_farmers') }}">Farmers</a>
-          <a href="{{ url_for('admin_buyers') }}">Buyers</a>
-          <a href="{{ url_for('admin_orders') }}">Order tracking</a>
-        {% elif current_user.role == 'farmer' %}
-          <a href="{{ url_for('farmer_dashboard') }}">My stock</a>
-          <a href="{{ url_for('farmer_orders') }}">Orders</a>
-        {% else %}
-          <a href="{{ url_for('index') }}">Find stock</a>
-          <a href="{{ url_for('orders') }}">My orders</a>
-        {% endif %}
-        <span class="muted">{{ current_user.name }} ({{ ROLE_LABELS.get(current_user.role, current_user.role) }})</span>
-        <a href="{{ url_for('logout') }}">Log out</a>
-      {% else %}
-        <a class="btn small" href="{{ url_for('welcome') }}">Log in / Sign up</a>
-      {% endif %}
-    </nav>
-  </header>
+  <div class="topload" id="topload"></div>
+  <div class="app {% block app_class %}{% endblock %}">
+    {# ---- Desktop top bar (hidden on phones; phones use the bottom bar) ---- #}
+    {% if not (current_user and current_user.role == 'admin') %}
+    <header class="sitebar">
+      <div class="sitebar-inner">
+        <a class="logo-link" href="{{ url_for('farmer_dashboard') if current_user and current_user.role == 'farmer' else url_for('index') }}" aria-label="FarmBridge home"><img class="brand-logo" src="{{ url_for('static', filename='img/farmbridge-logo.png') }}" alt="FarmBridge: Bridging Farmers and Families" width="150" height="40"></a>
+        <nav class="sitenav" aria-label="Main">
+          {% if current_user and current_user.role == 'farmer' %}
+            <a class="{{ 'active' if active_tab == 'dashboard' }}" href="{{ url_for('farmer_dashboard') }}">{{ icon('home', 18) }}Dashboard</a>
+            <a class="{{ 'active' if active_tab == 'listings' }}" href="{{ url_for('farmer_listings') }}">{{ icon('listings', 18) }}Listings</a>
+            <a class="{{ 'active' if active_tab == 'orders' }}" href="{{ url_for('farmer_orders') }}">{{ icon('orders', 18) }}Orders</a>
+            <a class="{{ 'active' if active_tab == 'profile' }}" href="{{ url_for('profile') }}">{{ icon('profile', 18) }}Profile</a>
+          {% else %}
+            <a class="{{ 'active' if active_tab == 'home' }}" href="{{ url_for('index') }}">{{ icon('home', 18) }}Home</a>
+            <a class="{{ 'active' if active_tab == 'cart' }}" href="{{ url_for('cart') }}">{{ icon('cart', 18) }}Cart{% if cart_count %}<span class="count">{{ cart_count }}</span>{% endif %}</a>
+            <a class="{{ 'active' if active_tab == 'orders' }}" href="{{ url_for('orders') }}">{{ icon('orders', 18) }}Orders</a>
+            <a class="{{ 'active' if active_tab == 'profile' }}" href="{{ url_for('profile') }}">{{ icon('profile', 18) }}Profile</a>
+          {% endif %}
+        </nav>
+        <div class="site-actions">
+          {% if current_user %}
+            <span class="small-text muted">{{ current_user.name }}</span>
+            <a class="corner-logout" href="{{ url_for('logout') }}" aria-label="Log out">{{ icon('logout', 18) }}<span>Log out</span></a>
+          {% else %}
+            <a class="btn small" href="{{ url_for('welcome') }}">Log in / Sign up</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+    {% endif %}
 
-  <main class="container">
+    {# ---- Phones: top-right corner with Log out and the logo ---- #}
+    {% if not (current_user and current_user.role == 'admin') %}<div class="topstrip mobile-only">{{ topstrip(current_user) }}</div>{% endif %}
+
+    {# ---- Header: each page can replace it ---- #}
+    {% block header %}
+      {% if current_user and current_user.role == 'admin' %}
+        <div class="adminbar">
+          <a class="logo-link" href="{{ url_for('admin_dashboard') }}" aria-label="FarmBridge admin"><img class="brand-logo" src="{{ url_for('static', filename='img/farmbridge-logo.png') }}" alt="FarmBridge" width="150" height="40"></a><span class="tag solid">Admin</span>
+          <nav>
+            <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if active_tab == 'dashboard' }}">Dashboard</a>
+            <a href="{{ url_for('admin_farmers') }}" class="{{ 'active' if active_tab == 'farmers' }}">Farmers</a>
+            <a href="{{ url_for('admin_buyers') }}" class="{{ 'active' if active_tab == 'buyers' }}">Buyers</a>
+            <a href="{{ url_for('admin_orders') }}" class="{{ 'active' if active_tab == 'orders' }}">Order tracking</a>
+          </nav>
+          <a class="corner-logout" href="{{ url_for('logout') }}" aria-label="Log out">{{ icon('logout', 18) }}<span>Log out</span></a>
+        </div>
+      {% else %}
+        {% if not current_user %}<div class="appbar mobile-only" style="justify-content:flex-end"><a class="btn small" href="{{ url_for('welcome') }}">Log in / Sign up</a></div>{% endif %}
+      {% endif %}
+    {% endblock %}
+
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}" role="status">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
     {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
+
+    <main class="screen {% block screen_class %}{% endblock %}">
+      {% block content %}{% endblock %}
+    </main>
+
+    {# ---- Bottom navigation: buyer and farmer ---- #}
+    {% block nav %}
+      {% if current_user and current_user.role == 'farmer' %}
+        <nav class="tabbar" aria-label="Main">
+          <a class="tab {{ 'active' if active_tab == 'dashboard' }}" href="{{ url_for('farmer_dashboard') }}">{{ icon('home') }}Dashboard</a>
+          <a class="tab {{ 'active' if active_tab == 'listings' }}" href="{{ url_for('farmer_listings') }}">{{ icon('listings') }}Listings</a>
+          <a class="tab {{ 'active' if active_tab == 'orders' }}" href="{{ url_for('farmer_orders') }}">{{ icon('orders') }}Orders</a>
+          <a class="tab {{ 'active' if active_tab == 'profile' }}" href="{{ url_for('profile') }}">{{ icon('profile') }}Profile</a>
+        </nav>
+      {% elif not current_user or current_user.role == 'buyer' %}
+        <nav class="tabbar" aria-label="Main">
+          <a class="tab {{ 'active' if active_tab == 'home' }}" href="{{ url_for('index') }}">{{ icon('home') }}Home</a>
+          <a class="tab {{ 'active' if active_tab == 'cart' }}" href="{{ url_for('cart') }}">{{ icon('cart') }}Cart{% if cart_count %}<span class="count">{{ cart_count }}</span>{% endif %}</a>
+          <a class="tab {{ 'active' if active_tab == 'orders' }}" href="{{ url_for('orders') }}">{{ icon('orders') }}Orders</a>
+          <a class="tab {{ 'active' if active_tab == 'profile' }}" href="{{ url_for('profile') }}">{{ icon('profile') }}Profile</a>
+        </nav>
+      {% endif %}
+    {% endblock %}
+  </div>
+
+  {# Loading state: shown if a page takes longer than about a third of a second #}
+  <div id="page-skeleton" hidden aria-hidden="true">
+    <div class="inner">
+      <div class="skeleton" style="height:62px"></div>
+      <div class="skeleton" style="height:52px"></div>
+      <div class="skeleton" style="height:18px;width:140px"></div>
+      <div style="display:flex;gap:10px"><div class="skeleton" style="height:80px;width:80px"></div><div class="skeleton" style="height:80px;width:80px"></div><div class="skeleton" style="height:80px;width:80px"></div><div class="skeleton" style="height:80px;width:80px"></div></div>
+      <div class="skeleton" style="height:18px;width:140px"></div>
+      <div class="skeleton" style="height:120px"></div>
+      <div class="skeleton" style="height:88px"></div>
+      <div class="label">Loading fresh products…</div>
+    </div>
+  </div>
 
   {% block scripts_extra %}{% endblock %}
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ asset('js/app.js') }}"></script>
 </body>
 </html>

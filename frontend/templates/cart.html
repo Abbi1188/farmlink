@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, photo, topbar %}
+{% set active_tab = 'cart' %}
+{% block title %}Your cart · FarmBridge{% endblock %}
+{% block header %}{{ topbar('Your cart', url_for('index')) }}{% endblock %}
+{% block content %}
+{% if not items %}
+  <div class="empty">
+    <div class="illus">{{ icon('cart', 52) }}</div>
+    <h2>Your cart is empty</h2>
+    <p>Browse fresh products from farms near you and add them here.</p>
+    <a class="btn" href="{{ url_for('index') }}">Start shopping</a>
+  </div>
+{% else %}
+  <div class="cols"><div class="cols-main stack">
+  <p class="muted small-text">From {{ farm_name }} · {{ items|length }} item{{ '' if items|length == 1 else 's' }}</p>
+  {% for it in items %}
+    {% set l = it.listing %}
+    <div class="card cart-item">
+      <div class="top">
+        {{ photo(l.product_name, 'sm', l.photos[0] if l.photos else '') }}
+        <strong>{{ l.product_name }}</strong>
+        <form method="post" action="{{ url_for('cart_remove', listing_id=l.id) }}"><button class="link-btn muted" type="submit">Remove</button></form>
+      </div>
+      <span class="muted small-text">Rs {{ '%g'|format(l.price_per_unit) }} / {{ l.unit }} · {{ '%g'|format(l.available_qty) }} {{ l.unit }} available</span>
+      <div class="bottom">
+        <form method="post" action="{{ url_for('cart_update', listing_id=l.id) }}" class="stepper">
+          <button name="action" value="dec" type="submit" aria-label="Less">{{ icon('remove', 18) }}</button>
+          <span class="unit">{{ '%g'|format(it.qty) }} {{ l.unit }}</span>
+          <button name="action" value="inc" type="submit" aria-label="More">{{ icon('add', 18) }}</button>
+        </form>
+        <span class="line">Rs {{ '%g'|format(it.line) }}</span>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+  <aside class="cols-side stack">
+  <div class="card">
+    <div class="kv"><span>Subtotal</span><strong>Rs {{ '%g'|format(subtotal) }}</strong></div>
+    <div class="kv"><span>Delivery fee</span><strong>Chosen next step</strong></div>
+    <hr>
+    <div class="kv total"><span>Total</span><strong>Rs {{ '%g'|format(subtotal) }}</strong></div>
+  </div>
+  <a class="btn" href="{{ url_for('checkout') }}">Continue</a>
+  </aside></div>
+{% endif %}
+{% endblock %}

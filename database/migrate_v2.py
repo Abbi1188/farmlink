@@ -3,7 +3,7 @@
 Run from the project root:   python database/migrate_v2.py
 
 What it does
-  * creates the new tables (otp_codes, order_events)
+  * creates the new tables (otp_codes, order_events, stock_photos for the 3 pictures of each stock)
   * adds users.cnic (farmers give their CNIC at sign-up) with a unique index
   * adds approval_status and approval_note to stock_listings; stock that already exists stays visible (approved)
   * marks every existing farm as approved (farms no longer wait for admin approval)

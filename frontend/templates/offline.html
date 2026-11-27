@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Offline · FarmBridge{% endblock %}
+{% block content %}
+<section class="offline-page">
+  <img src="{{ url_for('static', filename='img/icon-192.png') }}" alt="" width="96" height="96">
+  <h1>You are offline</h1>
+  <p class="muted">FarmBridge needs the internet to show fresh stock. Check your connection and try again.</p>
+  <p><a class="btn small" href="javascript:location.reload()">Try again</a></p>
+</section>
+{% endblock %}

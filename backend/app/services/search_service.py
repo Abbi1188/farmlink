@@ -2,7 +2,7 @@
 from datetime import date
 
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session, contains_eager
+from sqlalchemy.orm import Session, contains_eager, selectinload
 
 from app.core.constants import Approval, ListingStatus, OrderStatus, Verification
 from app.core.geo import haversine_km
@@ -50,6 +50,7 @@ def to_public(listing: StockListing, lat: float | None, lon: float | None) -> di
         "fulfilment_label": label,
         "delivery_available": delivery_ok,
         "pickup_available": pickup_ok,
+        "photos": listing.photos,
     }
 
 
@@ -58,7 +59,11 @@ def _visible_listings(db: Session):
         db.query(StockListing)
         .join(StockListing.product)
         .join(StockListing.farm)
-        .options(contains_eager(StockListing.product), contains_eager(StockListing.farm))
+        .options(
+            contains_eager(StockListing.product),
+            contains_eager(StockListing.farm),
+            selectinload(StockListing.photo_rows),
+        )
         .filter(
             StockListing.status == ListingStatus.ACTIVE,
             StockListing.approval_status == Approval.APPROVED,  # admin must approve every new stock

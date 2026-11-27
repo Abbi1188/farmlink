@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5000", "http://127.0.0.1:5000"]
     order_response_timeout_minutes: int = 30
 
+    # Stock photos are saved here and served by the API under /uploads
+    upload_dir: str = str(ROOT_DIR / "backend" / "uploads")
+    max_stock_photos: int = 3
+    max_photo_mb: int = 5
+
     # Registration OTP. While no SMS provider is connected, keep otp_debug_return=True so the
     # code is shown on screen. Set it to False in production once send_sms() really sends SMS.
     otp_debug_return: bool = True

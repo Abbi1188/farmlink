@@ -62,6 +62,9 @@ class StockListing(Base):
 
     farm = relationship("FarmProfile", back_populates="listings")
     product = relationship("Product")
+    photo_rows = relationship(
+        "StockPhoto", back_populates="listing", order_by="StockPhoto.position, StockPhoto.id", cascade="all, delete-orphan"
+    )
 
     @property
     def available_qty(self) -> float:
@@ -70,3 +73,22 @@ class StockListing(Base):
     @property
     def product_name(self) -> str:
         return self.product.name
+
+    @property
+    def photos(self) -> list[str]:
+        """Web paths of the stock photos, first photo first (served by the API under /uploads)."""
+        return [f"/uploads/stock/{p.filename}" for p in self.photo_rows]
+
+
+class StockPhoto(Base):
+    """One picture of a stock listing. The image file lives in backend/uploads/stock/."""
+
+    __tablename__ = "stock_photos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    listing_id: Mapped[int] = mapped_column(ForeignKey("stock_listings.id", ondelete="CASCADE"), index=True)
+    filename: Mapped[str] = mapped_column(String(80), unique=True)
+    position: Mapped[int] = mapped_column(default=0)  # 0 = the main picture
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    listing = relationship("StockListing", back_populates="photo_rows")

@@ -80,6 +80,15 @@ CREATE INDEX ix_listings_city     ON stock_listings (city);
 CREATE INDEX ix_listings_district ON stock_listings (district);
 CREATE INDEX ix_listings_origin   ON stock_listings (origin_tag);
 CREATE INDEX ix_listings_status   ON stock_listings (status);
+
+CREATE TABLE stock_photos (
+    id         SERIAL PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES stock_listings(id) ON DELETE CASCADE,
+    filename   VARCHAR(80) NOT NULL UNIQUE,                  -- file in backend/uploads/stock/ (at most 3 per listing, enforced by the API)
+    position   INTEGER NOT NULL DEFAULT 0,                   -- 0 = main picture
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX ix_stock_photos_listing ON stock_photos (listing_id);
 CREATE INDEX ix_listings_approval ON stock_listings (approval_status);
 CREATE INDEX ix_listings_geo      ON stock_listings (latitude, longitude);
 -- For large data, add PostGIS and a GiST index on a geography column instead of the (latitude, longitude) index.
